@@ -105,6 +105,8 @@
     }
 
     #story,
+    #onboarding,
+    #grid-instructions,
     #check-message,
     #clues,
     #level-list,
@@ -121,6 +123,13 @@
       font-size: 1.1rem;
       line-height: 1.7;
       padding: 14px 16px;
+    }
+
+    #onboarding,
+    #grid-instructions {
+      color: #475569;
+      line-height: 1.6;
+      text-align: right;
     }
 
     #controls {
@@ -431,6 +440,7 @@
       <button id="help-button" class="icon-button" type="button" title="איך משחקים?" aria-label="איך משחקים?">?</button>
       <div class="logo-space"></div>
       <h1 id="level-title" class="game-title"></h1>
+      <div id="onboarding">בחרו שלב, קראו את הרמזים, וסמנו בטבלה מה לא אפשרי ומה כן מתאים. המטרה היא למצוא את כל ההתאמות הנכונות.</div>
     </div>
       <button id="reset-progress-button" type="button">איפוס התקדמות</button>
       <div id="level-list"></div>
@@ -446,6 +456,7 @@
         <button id="undo-button" class="icon-button" type="button" title="חזור" aria-label="חזור">↶</button>
         <button id="hint-button" class="icon-button" type="button" title="רמז" aria-label="רמז">💡</button>
       </div>
+      <div id="grid-instructions">לחיצה ראשונה = X, לחיצה שנייה = ○, לחיצה שלישית = ניקוי</div>
       <table id="puzzle-grid" dir="ltr"></table>
       <div id="check-message" aria-live="polite"></div>
       <div id="clues"></div>
@@ -462,12 +473,15 @@
   <div id="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <div id="help-modal">
       <button id="help-close-button" class="icon-button" type="button" title="סגירה" aria-label="סגירה">×</button>
-      <h2 id="help-title">ברוכים הבאים למשחק שבו כל פרט קטן משנה 🧩</h2>
-      <p>המטרה היא להבין מי קשור למה — רק לפי רמזים.</p>
-      <p>בכל חידה יש טבלה שמחברת בין כמה קטגוריות.<br>לאט לאט, בעזרת הרמזים, תגלו מה נכון ומה לא.</p>
-      <p>מה עושים בפועל:</p>
-      <p>• מסמנים X כשמשהו לא הגיוני<br>• מסמנים ○ כשמצאתם התאמה נכונה<br>• משלבים בין הרמזים כדי לפתור את כל החידה</p>
-      <p>כשתצליחו לסגור את כל ההתאמות — פתרתם את החידה! 🏆</p>
+      <h2 id="help-title">איך משחקים?</h2>
+      <p>המטרה היא למצוא מי מתאים למה, בעזרת הרמזים בלבד.</p>
+      <p>בכל חידה יש כמה קטגוריות וטבלה שמחברת ביניהן. קראו רמז, סמנו מה לא יכול להיות, ולאט לאט תגלו את ההתאמות הנכונות.</p>
+      <p>מה מסמנים?</p>
+      <p>• X אומר שההתאמה לא נכונה<br>• ○ אומר שמצאתם התאמה נכונה</p>
+      <p>איך משתמשים ברמזים?</p>
+      <p>כל רמז עוזר לפסול אפשרויות או לאשר התאמה. לפעמים צריך לשלב כמה רמזים יחד.</p>
+      <p>איך יודעים שסיימתם?</p>
+      <p>כשתסמנו את כל ההתאמות הנכונות ב־○, המשחק יזהה שפתרתם את החידה ויציג הודעת ניצחון 🏆</p>
     </div>
   </div>
 
