@@ -354,18 +354,32 @@
     }
 
     #controls {
+      direction: rtl;
       display: flex;
       gap: 8px;
+      justify-content: flex-start;
       margin: 18px 0 12px;
       white-space: nowrap;
     }
 
-    #controls.first-level-controls #puzzle-home-button {
+    #hint-button {
       order: 1;
     }
 
-    #controls.first-level-controls #tutorial-button {
+    #undo-button {
       order: 2;
+    }
+
+    #reset-button {
+      order: 3;
+    }
+
+    #puzzle-home-button {
+      order: 4;
+    }
+
+    #tutorial-button {
+      order: 5;
     }
 
     #puzzle-screen {
@@ -424,6 +438,16 @@
     .icon-button.active {
       background: var(--accent-soft);
       border-color: var(--accent);
+    }
+
+    .button-icon {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
     }
 
     body.hint-mode td.answer:hover {
@@ -747,8 +771,15 @@
       <div id="story"></div>
       <div id="controls">
         <button id="puzzle-home-button" class="icon-button" type="button" title="חזרה למסך הבית" aria-label="חזרה למסך הבית">🏠</button>
-        <button id="tutorial-button" class="icon-button" type="button" title="הדרכה" aria-label="הדרכה">📖</button>
-        <button id="reset-button" class="icon-button" type="button" title="מחק הכל" aria-label="מחק הכל">⌫</button>
+        <button id="reset-button" class="icon-button" type="button" title="מחק הכל" aria-label="מחק הכל">
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M6 6l1 15h10l1-15"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        </button>
         <button id="undo-button" class="icon-button" type="button" title="חזור" aria-label="חזור">↶</button>
         <button id="hint-button" class="icon-button" type="button" title="רמז" aria-label="רמז">💡</button>
       </div>
@@ -1353,8 +1384,8 @@
     }
 
     function isTutorialPuzzle() {
-      return currentPuzzle?.id === "id1"
-        || (normalizeDifficulty(currentPuzzle?.difficulty) === "קל" && currentPuzzle?.levelNumber === 1);
+      return normalizeDifficulty(currentPuzzle?.difficulty) === "קל"
+        && currentPuzzle?.levelNumber === 1;
     }
 
     function getCompletedPuzzleIds() {
@@ -1883,17 +1914,30 @@
       renderStory();
       buildGrid();
       renderClues();
-      document.getElementById("controls").classList.toggle("first-level-controls", isTutorialPuzzle());
-      document.getElementById("tutorial-button").hidden = !isTutorialPuzzle();
       if (isTutorialPuzzle()) {
         const controls = document.getElementById("controls");
-        const homeButton = document.getElementById("puzzle-home-button");
-        const tutorialButton = document.getElementById("tutorial-button");
-        controls.insertBefore(homeButton, tutorialButton);
+        let tutorialButton = document.getElementById("tutorial-button");
+
+        if (!tutorialButton) {
+          tutorialButton = document.createElement("button");
+          tutorialButton.id = "tutorial-button";
+          tutorialButton.className = "icon-button";
+          tutorialButton.type = "button";
+          tutorialButton.title = "הדרכה";
+          tutorialButton.setAttribute("aria-label", "הדרכה");
+          tutorialButton.textContent = "📖";
+          controls.appendChild(tutorialButton);
+        }
+      } else {
+        document.getElementById("tutorial-button")?.remove();
       }
-      document.getElementById("tutorial-button").onclick = () => {
-        startTutorial(true);
-      };
+      const tutorialButton = document.getElementById("tutorial-button");
+
+      if (tutorialButton) {
+        tutorialButton.onclick = () => {
+          startTutorial(true);
+        };
+      }
       startTutorial();
       document.getElementById("reset-button").onclick = resetGrid;
       document.getElementById("undo-button").onclick = undoLastAction;
