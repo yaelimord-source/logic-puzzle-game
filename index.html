@@ -1181,9 +1181,21 @@
       document.getElementById("home-button").onclick = returnHome;
       document.getElementById("next-button").onclick = loadNextPuzzle;
     }
+    function getAssetUrl(relativePath) {
+      return new URL(relativePath, document.baseURI).href;
+    }
+
+    function getPuzzleFileUrl(filePath) {
+      const normalizedPath = filePath.startsWith("puzzles/")
+        ? filePath
+        : `puzzles/${filePath}`;
+
+      return getAssetUrl(normalizedPath);
+    }
+
     async function loadCurrentPuzzle() {
       try {
-        const manifestResponse = await fetch("puzzles/index.json");
+        const manifestResponse = await fetch(getAssetUrl("puzzles/index.json"));
 
         if (!manifestResponse.ok) {
           throw new Error(`HTTP ${manifestResponse.status}`);
@@ -1202,7 +1214,7 @@
 
         for (const filePath of puzzleFiles) {
           try {
-            const response = await fetch(`puzzles/${filePath}`);
+            const response = await fetch(getPuzzleFileUrl(filePath));
 
             if (!response.ok) {
               throw new Error(`HTTP ${response.status}`);
