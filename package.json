@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "renumber-puzzles": "node scripts/renumber-puzzles.js",
+    "import-puzzle": "node scripts/import-puzzle.js",
+    "generate-puzzle-index": "node scripts/generate-puzzle-index.js"
+  }
+}

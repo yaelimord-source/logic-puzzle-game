@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אב טיפוס רשת חידה</title>
+  <style>
+    body {
+      align-items: flex-start;
+      background: linear-gradient(135deg, #eef6ff 0%, #f7fbff 45%, #f4f1ff 100%);
+      box-sizing: border-box;
+      display: flex;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      justify-content: center;
+      margin: 0;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .app-shell {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(31, 41, 55, 0.14);
+      box-sizing: border-box;
+      max-width: 100%;
+      padding: 24px;
+      width: min(100%, 960px);
+    }
+
+    h1,
+    #story,
+    #controls {
+      text-align: right;
+      unicode-bidi: plaintext;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+    }
+
+    .game-title {
+      color: #1e3a8a;
+      font-size: clamp(2rem, 7vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: 0;
+      line-height: 1.1;
+      margin-top: 40px;
+      text-align: center;
+      text-shadow: 0 3px 0 #bfdbfe;
+    }
+
+    .logo-space {
+      min-height: 72px;
+    }
+
+    .home-header {
+      position: relative;
+    }
+
+    #help-button {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #help-overlay {
+      align-items: center;
+      background: rgba(15, 23, 42, 0.38);
+      bottom: 0;
+      display: none;
+      justify-content: center;
+      left: 0;
+      padding: 16px;
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 20;
+    }
+
+    #help-modal {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+      box-sizing: border-box;
+      max-width: 420px;
+      padding: 22px;
+      position: relative;
+      width: 100%;
+    }
+
+    #help-modal h2 {
+      margin: 0 0 14px;
+    }
+
+    #help-modal ul {
+      line-height: 1.8;
+      margin: 0;
+      padding-inline-start: 22px;
+    }
+
+    #help-close-button {
+      left: 12px;
+      position: absolute;
+      top: 12px;
+    }
+
+    #story,
+    #check-message,
+    #clues,
+    #level-list,
+    #difficulty-buttons {
+      margin-top: 14px;
+    }
+
+    #story {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 14px;
+      color: #3b2f25;
+      font-family: "Segoe Print", "Comic Sans MS", system-ui, sans-serif;
+      font-size: 1.1rem;
+      line-height: 1.7;
+      padding: 14px 16px;
+    }
+
+    #controls {
+      margin: 18px 0 12px;
+      white-space: nowrap;
+    }
+
+    #puzzle-screen {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    button {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      cursor: pointer;
+      font: inherit;
+      margin: 4px;
+      padding: 8px 14px;
+    }
+
+    button:hover:not(:disabled) {
+      background: #f1f5f9;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .icon-button {
+      align-items: center;
+      border-radius: 999px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+      display: inline-flex;
+      font-size: 20px;
+      height: 42px;
+      justify-content: center;
+      line-height: 1;
+      padding: 0;
+      width: 42px;
+    }
+
+    .icon-button:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .icon-button.active {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+
+    body.hint-mode td.answer:hover {
+      background: #fef08a;
+    }
+
+    .difficulty-section {
+      margin-top: 24px;
+    }
+
+    .difficulty-section h2 {
+      font-size: 1.1rem;
+      margin: 0 0 10px;
+      text-align: right;
+    }
+
+    .level-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(64px, 64px));
+      max-width: 100%;
+    }
+
+    .level-tile {
+      align-items: center;
+      aspect-ratio: 1;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      display: flex;
+      font-weight: 700;
+      justify-content: center;
+      margin: 0;
+      max-width: 64px;
+      min-height: 64px;
+      padding: 0;
+      position: relative;
+    }
+
+    .level-tile.completed {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+
+    .level-tile.next-playable {
+      background: #86efac;
+      border-color: #16a34a;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.18);
+    }
+
+    .level-tile.locked {
+      background: #e5e7eb;
+      border-color: #cbd5e1;
+      color: #64748b;
+      opacity: 1;
+    }
+
+    .level-tile.locked::after {
+      content: "🔒";
+      font-size: 18px;
+      align-items: center;
+      display: flex;
+      justify-content: center;
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 12px;
+      }
+
+      .app-shell {
+        border-radius: 12px;
+        padding: 16px;
+      }
+
+      .level-grid {
+        grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+        max-width: 100%;
+      }
+
+      .level-tile {
+        max-width: none;
+        min-height: 52px;
+      }
+
+      #puzzle-grid {
+        --grid-cell-size: 31px;
+        --row-label-width: 42px;
+        font-size: 11px;
+      }
+
+      #puzzle-grid td.answer {
+        font-size: calc(var(--grid-cell-size) * 0.76);
+      }
+
+      #puzzle-grid th,
+      #puzzle-grid td {
+        overflow-wrap: anywhere;
+      }
+
+      #puzzle-grid .column-item-label {
+        height: 76px;
+        line-height: 1.05;
+        padding: 2px;
+        vertical-align: bottom;
+        white-space: normal;
+      }
+
+      #puzzle-grid .column-item-label {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+      }
+
+      #puzzle-grid .row-item-label {
+        font-size: 10px;
+        line-height: 1.05;
+        padding: 2px;
+        white-space: normal;
+      }
+
+      #puzzle-grid .row-group-header {
+        font-size: 10px;
+        line-height: 1.05;
+        padding: 2px;
+      }
+
+      #help-modal {
+        padding-top: 54px;
+      }
+
+      #help-close-button {
+        top: 10px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      #puzzle-grid {
+        --grid-cell-size: 28px;
+        --row-label-width: 36px;
+      }
+
+      #puzzle-grid .column-item-label {
+        height: 70px;
+      }
+    }
+
+    table {
+      --grid-cell-size: 60px;
+      --row-label-width: var(--grid-cell-size);
+      border-collapse: collapse;
+      table-layout: fixed;
+      border-spacing: 0;
+      margin-left: auto;
+    }
+
+    th,
+    td {
+      border: 1px solid #000;
+      box-sizing: border-box;
+      width: var(--grid-cell-size);
+      height: var(--grid-cell-size);
+      min-width: var(--grid-cell-size);
+      text-align: center;
+      vertical-align: middle;
+      font-weight: normal;
+      padding: 0;
+    }
+
+    col.answer-col {
+      width: var(--grid-cell-size);
+    }
+
+    col.row-label-col {
+      width: var(--row-label-width);
+    }
+
+    td.answer {
+      cursor: pointer;
+      font-size: 46px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .blank-area {
+      background: #fff;
+    }
+
+    .column-group-header,
+    .row-group-header {
+      background: #bfefff;
+      color: #000;
+    }
+
+    #clues {
+      direction: rtl;
+      text-align: right;
+    }
+
+    #win-overlay {
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      bottom: 0;
+      display: none;
+      justify-content: center;
+      left: 0;
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 10;
+    }
+
+    #win-message {
+      background: #fff;
+      border: 1px solid #000;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .clean-blank {
+      border-top-color: transparent;
+      border-right-color: transparent;
+      border-bottom-color: transparent;
+    }
+
+    .bottom-blank {
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+    }
+
+    .thick-top {
+      border-top-width: 3px;
+    }
+
+    .thick-right {
+      border-right-width: 3px;
+    }
+
+    .thick-bottom {
+      border-bottom-width: 3px;
+    }
+
+    .thick-left {
+      border-left-width: 3px;
+    }
+  </style>
+</head>
+<body dir="rtl">
+  <main class="app-shell">
+    <div id="home-screen">
+      <h1>חידות היגיון בעברית</h1>
+      <div id="difficulty-buttons"></div>
+      <div id="load-error" aria-live="polite"></div>
+    </div>
+
+  <div id="level-screen" hidden>
+    <div class="home-header">
+      <button id="help-button" class="icon-button" type="button" title="איך משחקים?" aria-label="איך משחקים?">?</button>
+      <div class="logo-space"></div>
+      <h1 id="level-title" class="game-title"></h1>
+    </div>
+      <button id="reset-progress-button" type="button">איפוס התקדמות</button>
+      <div id="level-list"></div>
+      <div id="level-message" aria-live="polite"></div>
+    </div>
+
+    <div id="puzzle-screen" hidden>
+      <h1 id="title"></h1>
+      <div id="story"></div>
+      <div id="controls">
+        <button id="puzzle-home-button" class="icon-button" type="button" title="חזרה למסך הבית" aria-label="חזרה למסך הבית">🏠</button>
+        <button id="reset-button" class="icon-button" type="button" title="מחק הכל" aria-label="מחק הכל">⌫</button>
+        <button id="undo-button" class="icon-button" type="button" title="חזור" aria-label="חזור">↶</button>
+        <button id="hint-button" class="icon-button" type="button" title="רמז" aria-label="רמז">💡</button>
+      </div>
+      <table id="puzzle-grid" dir="ltr"></table>
+      <div id="check-message" aria-live="polite"></div>
+      <div id="clues"></div>
+    </div>
+  </main>
+  <div id="win-overlay" role="dialog" aria-modal="true">
+    <div id="win-message">
+      <div>כל הכבוד! פתרת את החידה 🎉</div>
+      <button id="home-button" type="button">חזרה למסך הבית</button>
+      <button id="next-button" type="button">לשלב הבא</button>
+      <div id="win-action-message" aria-live="polite"></div>
+    </div>
+  </div>
+  <div id="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div id="help-modal">
+      <button id="help-close-button" class="icon-button" type="button" title="סגירה" aria-label="סגירה">×</button>
+      <h2 id="help-title">ברוכים הבאים למשחק שבו כל פרט קטן משנה 🧩</h2>
+      <p>המטרה היא להבין מי קשור למה — רק לפי רמזים.</p>
+      <p>בכל חידה יש טבלה שמחברת בין כמה קטגוריות.<br>לאט לאט, בעזרת הרמזים, תגלו מה נכון ומה לא.</p>
+      <p>מה עושים בפועל:</p>
+      <p>• מסמנים X כשמשהו לא הגיוני<br>• מסמנים ○ כשמצאתם התאמה נכונה<br>• משלבים בין הרמזים כדי לפתור את כל החידה</p>
+      <p>כשתצליחו לסגור את כל ההתאמות — פתרתם את החידה! 🏆</p>
+    </div>
+  </div>
+
+  <script>
+    let currentPuzzle;
+    let allPuzzles = [];
+    let selectedDifficulty = "";
+    const progressStorageKey = "logicPuzzleCompletedIds";
+    // TODO: Add a future puzzle validator that checks:
+    // - all categories have the same number of items
+    // - all clue references use existing items
+    // - the provided solution matches the clues
+    // - the puzzle has exactly one valid solution
+    // - there are no contradictions
+    const states = ["", "X", "○"];
+    const actionHistory = [];
+    let hintMode = false;
+
+    function addCell(row, text = "", options = {}) {
+      const cell = document.createElement(options.header ? "th" : "td");
+      cell.textContent = text;
+
+      if (options.colSpan) {
+        cell.colSpan = options.colSpan;
+      }
+
+      if (options.rowSpan) {
+        cell.rowSpan = options.rowSpan;
+      }
+
+      if (options.answer) {
+        cell.classList.add("answer");
+        cell.dataset.state = "0";
+        cell.dataset.rowType = options.rowType;
+        cell.dataset.rowValue = options.rowValue;
+        cell.dataset.columnType = options.columnType;
+        cell.dataset.columnValue = options.columnValue;
+        cell.addEventListener("click", () => {
+          actionHistory.push({
+            cell,
+            previousState: cell.dataset.state,
+            previousText: cell.textContent
+          });
+
+          if (hintMode) {
+            const hintState = isCorrectMatch(cell) ? "2" : "1";
+            setHintMode(false);
+            cell.dataset.state = hintState;
+            cell.textContent = states[hintState];
+            checkSolutionAutomatically();
+            return;
+          }
+
+          const nextState = (Number(cell.dataset.state) + 1) % states.length;
+          cell.dataset.state = String(nextState);
+          cell.textContent = states[nextState];
+          checkSolutionAutomatically();
+        });
+      }
+
+      (options.classes || []).forEach((className) => {
+        cell.classList.add(className);
+      });
+
+      row.appendChild(cell);
+      return cell;
+    }
+
+    function addAnswerRow(row, columns, classes = [], pair = {}) {
+      for (let index = 0; index < columns.length; index += 1) {
+        const cellClasses = [...classes];
+
+        if (index === 0) {
+          cellClasses.push("thick-left");
+        }
+
+        if (index === columns.length - 1) {
+          cellClasses.push("thick-right");
+        }
+
+        addCell(row, "", {
+          answer: true,
+          rowType: pair.rowType,
+          rowValue: pair.rowValue,
+          columnType: pair.columnType,
+          columnValue: columns[index],
+          classes: cellClasses
+        });
+      }
+    }
+
+    function buildGrid() {
+      const [primaryCategory, secondCategory, thirdCategory] = getPuzzleCategories();
+      const primaryItems = getCategoryItems(primaryCategory);
+      const secondItems = getCategoryItems(secondCategory);
+      const thirdItems = getCategoryItems(thirdCategory);
+      const thirdItemsAsColumns = [...thirdItems].reverse();
+      const table = document.getElementById("puzzle-grid");
+      const totalColumns = thirdItems.length + secondItems.length + 2;
+      const colgroup = document.createElement("colgroup");
+
+      for (let index = 0; index < totalColumns; index += 1) {
+        const col = document.createElement("col");
+        const isRowLabelColumn = index >= totalColumns - 2;
+        col.className = isRowLabelColumn ? "row-label-col" : "answer-col";
+        col.style.width = isRowLabelColumn ? "var(--row-label-width)" : "var(--grid-cell-size)";
+        colgroup.appendChild(col);
+      }
+
+      table.appendChild(colgroup);
+      table.style.setProperty("--grid-columns", totalColumns);
+      table.style.width = `calc((var(--grid-cell-size) * ${totalColumns - 2}) + (var(--row-label-width) * 2))`;
+
+      const topHeaderRow = table.insertRow();
+      addCell(topHeaderRow, getCategoryLabel(thirdCategory), {
+        header: true,
+        colSpan: thirdItems.length,
+        classes: ["column-group-header", "thick-top", "thick-right", "thick-bottom", "thick-left"]
+      });
+      addCell(topHeaderRow, getCategoryLabel(secondCategory), {
+        header: true,
+        colSpan: secondItems.length,
+        classes: ["column-group-header", "thick-top", "thick-right", "thick-bottom", "thick-left"]
+      });
+      addCell(topHeaderRow, "", {
+        header: true,
+        colSpan: 2,
+        rowSpan: 2,
+        classes: ["blank-area", "clean-blank", "thick-left"]
+      });
+
+      const itemHeaderRow = table.insertRow();
+      thirdItemsAsColumns.forEach((cup, index) => {
+        addCell(itemHeaderRow, cup, {
+          header: true,
+          classes: [
+            "column-item-label",
+            "thick-top",
+            "thick-bottom",
+            index === 0 ? "thick-left" : "",
+            index === thirdItemsAsColumns.length - 1 ? "thick-right" : ""
+          ].filter(Boolean)
+        });
+      });
+      secondItems.forEach((drink, index) => {
+        addCell(itemHeaderRow, drink, {
+          header: true,
+          classes: [
+            "column-item-label",
+            "thick-top",
+            "thick-bottom",
+            index === 0 ? "thick-left" : "",
+            index === secondItems.length - 1 ? "thick-right" : ""
+          ].filter(Boolean)
+        });
+      });
+
+      primaryItems.forEach((friend, rowIndex) => {
+        const row = table.insertRow();
+        const rowClasses = [
+          rowIndex === 0 ? "thick-top" : "",
+          rowIndex === primaryItems.length - 1 ? "thick-bottom" : ""
+        ].filter(Boolean);
+
+        addAnswerRow(row, thirdItemsAsColumns, rowClasses, {
+          rowType: primaryCategory.key,
+          rowValue: friend,
+          columnType: thirdCategory.key
+        });
+        addAnswerRow(row, secondItems, rowClasses, {
+          rowType: primaryCategory.key,
+          rowValue: friend,
+          columnType: secondCategory.key
+        });
+        addCell(row, friend, {
+          header: true,
+          classes: [
+            "row-item-label",
+            "thick-left",
+            "thick-right",
+            rowIndex === 0 ? "thick-top" : "",
+            rowIndex === primaryItems.length - 1 ? "thick-bottom" : ""
+          ].filter(Boolean)
+        });
+
+        if (rowIndex === 0) {
+          addCell(row, getCategoryLabel(primaryCategory), {
+            header: true,
+            rowSpan: primaryItems.length,
+            classes: ["row-group-header", "thick-top", "thick-right", "thick-bottom", "thick-left"]
+          });
+        }
+      });
+
+      thirdItems.forEach((cup, rowIndex) => {
+        const row = table.insertRow();
+        const rowClasses = [
+          rowIndex === 0 ? "thick-top" : "",
+          rowIndex === thirdItems.length - 1 ? "thick-bottom" : ""
+        ].filter(Boolean);
+
+        if (rowIndex === 0) {
+          addCell(row, "", {
+            colSpan: thirdItems.length,
+            rowSpan: thirdItems.length,
+            classes: ["blank-area", "bottom-blank", "thick-top", "thick-right"]
+          });
+        }
+
+        addAnswerRow(row, secondItems, rowClasses, {
+          rowType: thirdCategory.key,
+          rowValue: cup,
+          columnType: secondCategory.key
+        });
+        addCell(row, cup, {
+          header: true,
+          classes: [
+            "row-item-label",
+            "thick-left",
+            "thick-right",
+            rowIndex === 0 ? "thick-top" : "",
+            rowIndex === thirdItems.length - 1 ? "thick-bottom" : ""
+          ].filter(Boolean)
+        });
+
+        if (rowIndex === 0) {
+          addCell(row, getCategoryLabel(thirdCategory), {
+            header: true,
+            rowSpan: thirdItems.length,
+            classes: ["row-group-header", "thick-top", "thick-right", "thick-bottom", "thick-left"]
+          });
+        }
+      });
+    }
+
+    function validateCategoryLengths() {
+      const message = document.getElementById("check-message");
+      const categories = getCategoriesFromPuzzle(currentPuzzle);
+      const categoryLengths = categories.map((category) => category.items.length);
+      const firstLength = categoryLengths[0];
+      const allSameLength = categories.length === 3
+        && categoryLengths.every((length) => length === firstLength);
+
+      if (!allSameLength) {
+        message.textContent = "שגיאה: החידה חייבת להכיל בדיוק 3 קטגוריות עם אותו מספר פריטים.";
+      }
+
+      return allSameLength;
+    }
+
+    function isCorrectMatch(cell) {
+      const [primaryCategory, secondCategory, thirdCategory] = getPuzzleCategories();
+      const rowType = cell.dataset.rowType;
+      const rowValue = cell.dataset.rowValue;
+      const columnType = cell.dataset.columnType;
+      const columnValue = cell.dataset.columnValue;
+      const solution = currentPuzzle.solution;
+
+      if (rowType === primaryCategory.key) {
+        return solution[rowValue]?.[columnType] === columnValue;
+      }
+
+      if (rowType === thirdCategory.key && columnType === secondCategory.key) {
+        return Object.values(solution).some((match) => {
+          return match[thirdCategory.key] === rowValue && match[secondCategory.key] === columnValue;
+        });
+      }
+
+      return false;
+    }
+
+    function checkSolution() {
+      checkSolutionAutomatically();
+      return;
+
+      const answerCells = Array.from(document.querySelectorAll("td.answer"));
+      const message = document.getElementById("check-message");
+      const hasWrongMark = answerCells.some((cell) => {
+        const mark = cell.textContent;
+
+        if (mark === "") {
+          return false;
+        }
+
+        if (mark === "○") {
+          return !isCorrectMatch(cell);
+        }
+
+        if (mark === "X") {
+          return isCorrectMatch(cell);
+        }
+
+        return false;
+      });
+      const missingCorrectMatch = answerCells.some((cell) => {
+        return isCorrectMatch(cell) && cell.textContent !== "○";
+      });
+
+      message.textContent = hasWrongMark || missingCorrectMatch
+        ? "יש טעות או שחסר סימון נכון."
+        : "נכון!";
+    }
+
+    function checkSolutionAutomatically() {
+      const answerCells = Array.from(document.querySelectorAll("td.answer"));
+      const message = document.getElementById("check-message");
+      const hasWrongMark = answerCells.some((cell) => {
+        const mark = cell.textContent;
+
+        if (mark === "") {
+          return false;
+        }
+
+        if (mark === "○") {
+          return !isCorrectMatch(cell);
+        }
+
+        if (mark === "X") {
+          return isCorrectMatch(cell);
+        }
+
+        return false;
+      });
+      const missingCorrectMatch = answerCells.some((cell) => {
+        return isCorrectMatch(cell) && cell.textContent !== "○";
+      });
+
+      message.textContent = !hasWrongMark && !missingCorrectMatch ? "נכון!" : "";
+
+      if (!hasWrongMark && !missingCorrectMatch) {
+        saveCompletedPuzzleId(currentPuzzle.id);
+        showWinOverlay();
+      }
+    }
+
+    function showWinOverlay() {
+      document.getElementById("win-overlay").style.display = "flex";
+    }
+
+    function showTemporaryWinAction(message) {
+      console.log(message);
+      document.getElementById("win-action-message").textContent = message;
+    }
+
+    function resetGrid() {
+      document.querySelectorAll("td.answer").forEach((cell) => {
+        cell.dataset.state = "0";
+        cell.textContent = "";
+      });
+      actionHistory.length = 0;
+      document.getElementById("check-message").textContent = "";
+    }
+
+    function undoLastAction() {
+      const lastAction = actionHistory.pop();
+
+      if (!lastAction) {
+        return;
+      }
+
+      lastAction.cell.dataset.state = lastAction.previousState;
+      lastAction.cell.textContent = lastAction.previousText;
+      checkSolutionAutomatically();
+    }
+
+    function revealHint() {
+      setHintMode(true);
+      document.getElementById("check-message").textContent = "בחרי משבצת לרמז";
+    }
+
+    function renderClues() {
+      const cluesElement = document.getElementById("clues");
+
+      if (currentPuzzle.clues.length === 0) {
+        cluesElement.textContent = "";
+        return;
+      }
+
+      currentPuzzle.clues.forEach((clue, index) => {
+        const clueLine = document.createElement("div");
+        clueLine.textContent = `${index + 1}. ${clue}`;
+        cluesElement.appendChild(clueLine);
+      });
+    }
+
+    function renderStory() {
+      document.getElementById("title").textContent = currentPuzzle.title || "";
+      document.getElementById("story").textContent = currentPuzzle.story || "";
+    }
+
+    function showScreen(screenId) {
+      ["home-screen", "level-screen", "puzzle-screen"].forEach((id) => {
+        document.getElementById(id).hidden = id !== screenId;
+      });
+    }
+
+    function getPuzzleCategories() {
+      return Object.entries(currentPuzzle.categories).map(([key, items]) => {
+        return { key, items };
+      });
+    }
+
+    function getCategoriesFromPuzzle(puzzle) {
+      return Object.entries(puzzle.categories || {}).map(([key, items]) => {
+        return { key, items };
+      });
+    }
+
+    function validatePuzzleData(puzzle) {
+      const requiredFields = [
+        "id",
+        "difficulty",
+        "levelNumber",
+        "title",
+        "story",
+        "categories",
+        "clues",
+        "solution"
+      ];
+      const missingField = requiredFields.find((field) => {
+        return puzzle[field] === undefined || puzzle[field] === null;
+      });
+
+      if (missingField) {
+        throw new Error(`Missing required puzzle field: ${missingField}`);
+      }
+
+      if (!Array.isArray(puzzle.clues)) {
+        throw new Error("Puzzle clues must be an array");
+      }
+
+      if (typeof puzzle.solution !== "object" || Array.isArray(puzzle.solution)) {
+        throw new Error("Puzzle solution must be an object");
+      }
+
+      if (
+        puzzle.categoryLabels !== undefined
+        && (typeof puzzle.categoryLabels !== "object" || Array.isArray(puzzle.categoryLabels))
+      ) {
+        throw new Error("Puzzle categoryLabels must be an object");
+      }
+
+      const categories = getCategoriesFromPuzzle(puzzle);
+
+      if (categories.length !== 3) {
+        throw new Error("Puzzle must include exactly 3 categories");
+      }
+
+      categories.forEach((category) => {
+        if (!Array.isArray(category.items)) {
+          throw new Error(`Puzzle category must be an array: ${category.key}`);
+        }
+      });
+    }
+
+    function getCategoryLabel(category) {
+      return currentPuzzle.categoryLabels?.[category.key] || category.key;
+    }
+
+    function getCategoryItems(category) {
+      return category.items;
+    }
+
+    function getCompletedPuzzleIds() {
+      const savedProgress = localStorage.getItem(progressStorageKey);
+
+      if (!savedProgress) {
+        return [];
+      }
+
+      try {
+        return JSON.parse(savedProgress);
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCompletedPuzzleId(puzzleId) {
+      const completedIds = getCompletedPuzzleIds();
+
+      if (!completedIds.includes(puzzleId)) {
+        completedIds.push(puzzleId);
+        localStorage.setItem(progressStorageKey, JSON.stringify(completedIds));
+      }
+    }
+
+    function isPuzzleCompleted(puzzleId) {
+      return getCompletedPuzzleIds().includes(puzzleId);
+    }
+
+    function normalizeDifficulty(difficulty) {
+      const difficultyMap = {
+        easy: "קל",
+        medium: "בינוני",
+        hard: "קשה",
+        "very-hard": "קשה מאוד",
+        veryHard: "קשה מאוד"
+      };
+
+      return difficultyMap[difficulty] || difficulty;
+    }
+
+    function isPuzzleUnlocked(puzzle, difficultyPuzzles) {
+      if (puzzle.levelNumber === 1) {
+        return true;
+      }
+
+      const previousPuzzle = difficultyPuzzles.find((item) => {
+        return item.levelNumber === puzzle.levelNumber - 1;
+      });
+
+      return Boolean(previousPuzzle && isPuzzleCompleted(previousPuzzle.id));
+    }
+
+    function renderHomeScreen() {
+      const difficulties = ["קל", "בינוני", "קשה", "קשה מאוד"];
+      const buttonsElement = document.getElementById("difficulty-buttons");
+      buttonsElement.textContent = "";
+      document.getElementById("load-error").textContent = "";
+
+      difficulties.forEach((difficulty) => {
+        const hasPuzzles = allPuzzles.some((puzzle) => puzzle.difficulty === difficulty);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = hasPuzzles ? difficulty : `${difficulty} - בקרוב`;
+        button.disabled = !hasPuzzles;
+        button.addEventListener("click", () => {
+          selectedDifficulty = difficulty;
+          renderLevelScreen(difficulty);
+        });
+        buttonsElement.appendChild(button);
+      });
+
+      document.getElementById("reset-progress-button").onclick = () => {
+        localStorage.removeItem(progressStorageKey);
+        renderLevelScreen(selectedDifficulty);
+      };
+      document.getElementById("puzzle-home-button").onclick = returnHome;
+      showScreen("home-screen");
+    }
+
+    function openHelp() {
+      document.getElementById("help-overlay").style.display = "flex";
+    }
+
+    function closeHelp() {
+      document.getElementById("help-overlay").style.display = "none";
+    }
+
+    function renderLevelScreen(difficulty) {
+      const levelsElement = document.getElementById("level-list");
+      const difficulties = ["קל", "בינוני", "קשה", "קשה מאוד"];
+      const loadedDifficultyValues = [...new Set(allPuzzles.map((puzzle) => puzzle.difficulty))];
+      const normalizedDifficultyValues = [...new Set(allPuzzles.map((puzzle) => normalizeDifficulty(puzzle.difficulty)))];
+      const countByDifficulty = allPuzzles.reduce((counts, puzzle) => {
+        const normalizedDifficulty = normalizeDifficulty(puzzle.difficulty);
+        counts[normalizedDifficulty] = (counts[normalizedDifficulty] || 0) + 1;
+        return counts;
+      }, {});
+
+      console.log("Level render debug: total puzzles loaded", allPuzzles.length);
+      console.log("Level render debug: count by difficulty", countByDifficulty);
+      console.log("Level render debug: unique difficulty values", loadedDifficultyValues);
+      console.log("Level render debug: normalized difficulty values", normalizedDifficultyValues);
+      allPuzzles.forEach((puzzle) => {
+        if (!difficulties.includes(normalizeDifficulty(puzzle.difficulty))) {
+          console.warn("Level render debug: puzzle skipped because difficulty is not rendered", {
+            id: puzzle.id,
+            difficulty: puzzle.difficulty,
+            normalizedDifficulty: normalizeDifficulty(puzzle.difficulty),
+            levelNumber: puzzle.levelNumber,
+            title: puzzle.title
+          });
+        }
+      });
+      document.getElementById("level-title").textContent = "חידות הגיון";
+      document.getElementById("level-message").textContent = "";
+      levelsElement.textContent = "";
+
+      difficulties.forEach((difficultyName) => {
+        const matchingPuzzles = allPuzzles
+          .filter((puzzle) => normalizeDifficulty(puzzle.difficulty) === difficultyName)
+          .sort((a, b) => a.levelNumber - b.levelNumber);
+        const highestLevelNumber = matchingPuzzles.reduce((highest, puzzle) => {
+          return Math.max(highest, Number(puzzle.levelNumber) || 0);
+        }, 0);
+
+        console.log("Level render debug: rendered difficulty section", {
+          difficulty: difficultyName,
+          displayedPuzzles: matchingPuzzles.length,
+          highestLevelNumber
+        });
+
+        const section = document.createElement("section");
+        section.className = "difficulty-section";
+
+        const title = document.createElement("h2");
+        title.textContent = difficultyName;
+        section.appendChild(title);
+
+        const grid = document.createElement("div");
+        grid.className = "level-grid";
+
+        matchingPuzzles.forEach((puzzle) => {
+          const unlocked = isPuzzleUnlocked(puzzle, matchingPuzzles);
+          const completed = isPuzzleCompleted(puzzle.id);
+          const nextPlayable = unlocked && !completed;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "level-tile";
+          button.textContent = unlocked ? puzzle.levelNumber : "";
+          button.disabled = !unlocked;
+          button.title = unlocked ? "" : "יש להשלים את השלב הקודם קודם";
+
+          if (completed) {
+            button.classList.add("completed");
+          } else if (nextPlayable) {
+            button.classList.add("next-playable");
+          } else {
+            button.classList.add("locked");
+          }
+
+          button.addEventListener("click", () => {
+            if (!unlocked) {
+              document.getElementById("level-message").textContent = "יש להשלים את השלב הקודם קודם";
+              return;
+            }
+
+            loadPuzzleById(puzzle.id);
+          });
+          grid.appendChild(button);
+        });
+
+        section.appendChild(grid);
+        levelsElement.appendChild(section);
+      });
+
+      showScreen("level-screen");
+    }
+
+    function loadPuzzle(puzzle) {
+      currentPuzzle = puzzle;
+      showScreen("puzzle-screen");
+      initializeGame();
+    }
+
+    function loadPuzzleById(puzzleId) {
+      const puzzle = allPuzzles.find((item) => item.id === puzzleId);
+
+      if (puzzle) {
+        loadPuzzle(puzzle);
+      }
+    }
+
+    function returnHome() {
+      setHintMode(false);
+      document.getElementById("win-overlay").style.display = "none";
+      document.getElementById("check-message").textContent = "";
+      renderLevelScreen(selectedDifficulty || "קל");
+    }
+
+    function loadNextPuzzle() {
+      const sameDifficultyPuzzles = allPuzzles
+        .filter((puzzle) => normalizeDifficulty(puzzle.difficulty) === normalizeDifficulty(currentPuzzle.difficulty))
+        .sort((a, b) => a.levelNumber - b.levelNumber);
+      const currentIndex = sameDifficultyPuzzles.indexOf(currentPuzzle);
+      const nextPuzzle = sameDifficultyPuzzles[currentIndex + 1];
+
+      if (!nextPuzzle) {
+        document.getElementById("win-action-message").textContent = "אין שלב נוסף כרגע";
+        return;
+      }
+
+      loadPuzzleById(nextPuzzle.id);
+    }
+
+    document.getElementById("help-button").onclick = openHelp;
+    document.getElementById("help-close-button").onclick = closeHelp;
+    document.getElementById("help-overlay").onclick = (event) => {
+      if (event.target.id === "help-overlay") {
+        closeHelp();
+      }
+    };
+
+    function setHintMode(isActive) {
+      hintMode = isActive;
+      document.getElementById("hint-button").classList.toggle("active", isActive);
+      document.body.classList.toggle("hint-mode", isActive);
+    }
+
+    function initializeGame() {
+      document.getElementById("puzzle-grid").textContent = "";
+      document.getElementById("clues").textContent = "";
+      document.getElementById("check-message").textContent = "";
+      document.getElementById("win-overlay").style.display = "none";
+      document.getElementById("win-action-message").textContent = "";
+      actionHistory.length = 0;
+      setHintMode(false);
+
+      if (!validateCategoryLengths()) {
+        return;
+      }
+
+      renderStory();
+      buildGrid();
+      renderClues();
+      document.getElementById("reset-button").onclick = resetGrid;
+      document.getElementById("undo-button").onclick = undoLastAction;
+      document.getElementById("hint-button").onclick = revealHint;
+      document.getElementById("puzzle-home-button").onclick = returnHome;
+      document.getElementById("home-button").onclick = returnHome;
+      document.getElementById("next-button").onclick = loadNextPuzzle;
+    }
+    async function loadCurrentPuzzle() {
+      try {
+        const manifestResponse = await fetch("puzzles/index.json");
+
+        if (!manifestResponse.ok) {
+          throw new Error(`HTTP ${manifestResponse.status}`);
+        }
+
+        const puzzleFiles = await manifestResponse.json();
+
+        if (!Array.isArray(puzzleFiles)) {
+          throw new Error("Puzzle index must be an array");
+        }
+
+        console.log("Puzzle index files:", puzzleFiles);
+
+        allPuzzles = [];
+        const failedPuzzles = [];
+
+        for (const filePath of puzzleFiles) {
+          try {
+            const response = await fetch(`puzzles/${filePath}`);
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const puzzle = await response.json();
+            validatePuzzleData(puzzle);
+            allPuzzles.push(puzzle);
+            console.log("Loaded puzzle:", filePath, puzzle);
+          } catch (error) {
+            failedPuzzles.push({ filePath, error });
+            console.error("Failed to load puzzle:", filePath, error);
+          }
+        }
+
+        console.log("Puzzle load summary:", {
+          loaded: allPuzzles.length,
+          failed: failedPuzzles.length
+        });
+        selectedDifficulty = "קל";
+        renderLevelScreen(selectedDifficulty);
+      } catch (error) {
+        document.getElementById("load-error").textContent = "שגיאה: קובץ חידה חסר או לא תקין.";
+        showScreen("home-screen");
+        console.error(error);
+      }
+    }
+
+    loadCurrentPuzzle();
+  </script>
+</body>
+</html>
