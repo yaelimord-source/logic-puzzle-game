@@ -104,6 +104,42 @@
       top: 12px;
     }
 
+    #tutorial-overlay {
+      bottom: 0;
+      display: none;
+      left: 0;
+      pointer-events: none;
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 15;
+    }
+
+    #tutorial-bubble {
+      background: #fff;
+      border: 1px solid #fbbf24;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
+      box-sizing: border-box;
+      line-height: 1.5;
+      max-width: 320px;
+      padding: 14px;
+      pointer-events: auto;
+      position: fixed;
+      right: 18px;
+      top: 18px;
+    }
+
+    #tutorial-skip-button,
+    #show-tutorial-button {
+      margin-top: 10px;
+    }
+
+    td.answer.tutorial-target {
+      background: #fef08a;
+      box-shadow: inset 0 0 0 3px #f59e0b;
+    }
+
     #story,
     #onboarding,
     #grid-instructions,
@@ -130,6 +166,26 @@
       color: #475569;
       line-height: 1.6;
       text-align: right;
+    }
+
+    #onboarding {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      margin-top: 16px;
+      padding: 14px 16px;
+    }
+
+    #onboarding p {
+      margin: 0 0 8px;
+    }
+
+    #onboarding p:last-child {
+      margin-bottom: 0;
+    }
+
+    .mark-example {
+      font-weight: 700;
     }
 
     #controls {
@@ -440,7 +496,6 @@
       <button id="help-button" class="icon-button" type="button" title="איך משחקים?" aria-label="איך משחקים?">?</button>
       <div class="logo-space"></div>
       <h1 id="level-title" class="game-title"></h1>
-      <div id="onboarding">בחרו שלב, קראו את הרמזים, וסמנו בטבלה מה לא אפשרי ומה כן מתאים. המטרה היא למצוא את כל ההתאמות הנכונות.</div>
     </div>
       <button id="reset-progress-button" type="button">איפוס התקדמות</button>
       <div id="level-list"></div>
@@ -456,7 +511,6 @@
         <button id="undo-button" class="icon-button" type="button" title="חזור" aria-label="חזור">↶</button>
         <button id="hint-button" class="icon-button" type="button" title="רמז" aria-label="רמז">💡</button>
       </div>
-      <div id="grid-instructions">לחיצה ראשונה = X, לחיצה שנייה = ○, לחיצה שלישית = ניקוי</div>
       <table id="puzzle-grid" dir="ltr"></table>
       <div id="check-message" aria-live="polite"></div>
       <div id="clues"></div>
@@ -482,6 +536,13 @@
       <p>כל רמז עוזר לפסול אפשרויות או לאשר התאמה. לפעמים צריך לשלב כמה רמזים יחד.</p>
       <p>איך יודעים שסיימתם?</p>
       <p>כשתסמנו את כל ההתאמות הנכונות ב־○, המשחק יזהה שפתרתם את החידה ויציג הודעת ניצחון 🏆</p>
+      <button id="show-tutorial-button" type="button">הצג שוב הדרכה</button>
+    </div>
+  </div>
+  <div id="tutorial-overlay" role="dialog" aria-modal="true" aria-live="polite">
+    <div id="tutorial-bubble">
+      <div id="tutorial-text"></div>
+      <button id="tutorial-skip-button" type="button">דלג על ההדרכה</button>
     </div>
   </div>
 
@@ -490,6 +551,9 @@
     let allPuzzles = [];
     let selectedDifficulty = "";
     const progressStorageKey = "logicPuzzleCompletedIds";
+    const tutorialStorageKey = "logicPuzzleTutorialSeen";
+    let tutorialActive = false;
+    let tutorialStep = 0;
     // TODO: Add a future puzzle validator that checks:
     // - all categories have the same number of items
     // - all clue references use existing items
@@ -539,6 +603,7 @@
           cell.dataset.state = String(nextState);
           cell.textContent = states[nextState];
           checkSolutionAutomatically();
+          handleTutorialCellClick(cell);
         });
       }
 
@@ -945,6 +1010,41 @@
       return category.items;
     }
 
+    function getTutorialTargets() {
+      const [primaryCategory, secondCategory, thirdCategory] = getPuzzleCategories();
+
+      return {
+        impossibleCell: {
+          rowType: thirdCategory.key,
+          rowValue: thirdCategory.items[1],
+          columnType: secondCategory.key,
+          columnValue: secondCategory.items[0],
+          mark: "X"
+        },
+        correctCell: {
+          rowType: thirdCategory.key,
+          rowValue: thirdCategory.items[0],
+          columnType: secondCategory.key,
+          columnValue: secondCategory.items[0],
+          mark: "○"
+        }
+      };
+    }
+
+    function findAnswerCell(target) {
+      return Array.from(document.querySelectorAll("td.answer")).find((cell) => {
+        return cell.dataset.rowType === target.rowType
+          && cell.dataset.rowValue === target.rowValue
+          && cell.dataset.columnType === target.columnType
+          && cell.dataset.columnValue === target.columnValue;
+      });
+    }
+
+    function isTutorialPuzzle() {
+      return currentPuzzle?.id === "id1"
+        || (normalizeDifficulty(currentPuzzle?.difficulty) === "קל" && currentPuzzle?.levelNumber === 1);
+    }
+
     function getCompletedPuzzleIds() {
       const savedProgress = localStorage.getItem(progressStorageKey);
 
@@ -1160,16 +1260,136 @@
 
     document.getElementById("help-button").onclick = openHelp;
     document.getElementById("help-close-button").onclick = closeHelp;
-    document.getElementById("help-overlay").onclick = (event) => {
+      document.getElementById("help-overlay").onclick = (event) => {
       if (event.target.id === "help-overlay") {
         closeHelp();
       }
+    };
+    document.getElementById("tutorial-skip-button").onclick = skipTutorial;
+    document.getElementById("show-tutorial-button").onclick = () => {
+      closeHelp();
+      startTutorial(true);
+      setTimeout(advanceTutorial, 900);
     };
 
     function setHintMode(isActive) {
       hintMode = isActive;
       document.getElementById("hint-button").classList.toggle("active", isActive);
       document.body.classList.toggle("hint-mode", isActive);
+    }
+
+    function clearTutorialHighlights() {
+      document.querySelectorAll(".tutorial-target").forEach((cell) => {
+        cell.classList.remove("tutorial-target");
+      });
+    }
+
+    function setTutorialText(text) {
+      document.getElementById("tutorial-text").textContent = text;
+    }
+
+    function showTutorialOverlay() {
+      document.getElementById("tutorial-overlay").style.display = "block";
+    }
+
+    function hideTutorialOverlay() {
+      document.getElementById("tutorial-overlay").style.display = "none";
+    }
+
+    function highlightTutorialTarget(target) {
+      clearTutorialHighlights();
+      const cell = findAnswerCell(target);
+
+      if (cell) {
+        cell.classList.add("tutorial-target");
+      }
+    }
+
+    function startTutorial(force = false) {
+      if (!isTutorialPuzzle()) {
+        return;
+      }
+
+      if (!force && localStorage.getItem(tutorialStorageKey) === "true") {
+        return;
+      }
+
+      tutorialActive = true;
+      tutorialStep = 1;
+      showTutorialOverlay();
+      setTutorialText("הרמזים עוזרים לנו לפסול התאמות שלא יכולות להיות נכונות.");
+      clearTutorialHighlights();
+    }
+
+    function finishTutorial() {
+      tutorialActive = false;
+      tutorialStep = 0;
+      clearTutorialHighlights();
+      hideTutorialOverlay();
+      localStorage.setItem(tutorialStorageKey, "true");
+    }
+
+    function skipTutorial() {
+      finishTutorial();
+    }
+
+    function advanceTutorial() {
+      if (!tutorialActive) {
+        return;
+      }
+
+      const targets = getTutorialTargets();
+
+      if (tutorialStep === 1) {
+        tutorialStep = 2;
+        setTutorialText(`לפי הרמז הראשון, ${targets.impossibleCell.columnValue} לא יכול להתאים ל${targets.impossibleCell.rowValue}. סמנו X במשבצת המסומנת.`);
+        highlightTutorialTarget(targets.impossibleCell);
+        return;
+      }
+
+      if (tutorialStep === 3) {
+        tutorialStep = 4;
+        setTutorialText(`עכשיו סמנו ○ במשבצת של ${targets.correctCell.columnValue} ו${targets.correctCell.rowValue}. זו התאמה נכונה לפי הרמז.`);
+        highlightTutorialTarget(targets.correctCell);
+        return;
+      }
+
+      if (tutorialStep === 5) {
+        setTutorialText("מעולה, עכשיו אפשר להמשיך לבד.");
+        clearTutorialHighlights();
+        setTimeout(finishTutorial, 1600);
+      }
+    }
+
+    function handleTutorialCellClick(cell) {
+      if (!tutorialActive) {
+        return;
+      }
+
+      const targets = getTutorialTargets();
+
+      if (
+        tutorialStep === 2
+        && cell === findAnswerCell(targets.impossibleCell)
+        && cell.textContent === "X"
+      ) {
+        tutorialStep = 3;
+        setTutorialText("נכון! X אומר שההתאמה הזו בלתי אפשרית.");
+        clearTutorialHighlights();
+        setTimeout(advanceTutorial, 1200);
+        return;
+      }
+
+      if (
+        tutorialStep === 4
+        && cell === findAnswerCell(targets.correctCell)
+        && cell.textContent === "○"
+      ) {
+        tutorialStep = 5;
+        setTutorialText("יפה! ○ אומר שמצאתם התאמה נכונה.");
+        clearTutorialHighlights();
+        setTimeout(advanceTutorial, 1200);
+      }
     }
 
     function initializeGame() {
@@ -1188,6 +1408,10 @@
       renderStory();
       buildGrid();
       renderClues();
+      startTutorial();
+      if (tutorialActive) {
+        setTimeout(advanceTutorial, 900);
+      }
       document.getElementById("reset-button").onclick = resetGrid;
       document.getElementById("undo-button").onclick = undoLastAction;
       document.getElementById("hint-button").onclick = revealHint;
