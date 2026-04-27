@@ -87,6 +87,16 @@ function writePuzzleIndex(indexPath, fileNames) {
   fs.writeFileSync(indexPath, `${JSON.stringify(fileNames, null, 2)}\n`, "utf8");
 }
 
+function createPuzzleIndexEntry(fileName, puzzle) {
+  return {
+    file: fileName,
+    id: puzzle.id,
+    difficulty: puzzle.difficulty,
+    levelNumber: puzzle.levelNumber,
+    title: puzzle.title
+  };
+}
+
 function comparePuzzlesByLevel(a, b) {
   const difficultyA = difficultyOrder.indexOf(a.puzzle.difficulty);
   const difficultyB = difficultyOrder.indexOf(b.puzzle.difficulty);
@@ -106,6 +116,7 @@ function comparePuzzlesByLevel(a, b) {
 
 module.exports = {
   comparePuzzlesByLevel,
+  createPuzzleIndexEntry,
   ensurePuzzlesDir,
   getProjectPaths,
   getPuzzleJsonFiles,

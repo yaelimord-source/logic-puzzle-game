@@ -1,8 +1,11 @@
 const fs = require("fs");
 const {
+  createPuzzleIndexEntry,
   ensurePuzzlesDir,
   getProjectPaths,
   getPuzzleJsonFiles,
+  readPuzzleFile,
+  validatePuzzle,
   writePuzzleIndex
 } = require("./puzzle-file-utils");
 
@@ -30,6 +33,11 @@ const puzzleFiles = getPuzzleJsonFiles(paths.puzzlesDir)
   .sort((a, b) => {
     return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
   });
+const puzzleIndex = puzzleFiles.map((fileName) => {
+  const puzzle = readPuzzleFile(paths.puzzlesDir, fileName);
+  validatePuzzle(puzzle);
+  return createPuzzleIndexEntry(fileName, puzzle);
+});
 
-writePuzzleIndex(paths.indexPath, puzzleFiles);
-console.log(`Generated puzzles/index.json with ${puzzleFiles.length} puzzle files.`);
+writePuzzleIndex(paths.indexPath, puzzleIndex);
+console.log(`Generated puzzles/index.json with ${puzzleIndex.length} puzzle files.`);

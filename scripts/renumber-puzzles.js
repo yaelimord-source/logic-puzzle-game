@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const {
   comparePuzzlesByLevel,
+  createPuzzleIndexEntry,
   ensurePuzzlesDir,
   getProjectPaths,
   getPuzzleJsonFiles,
@@ -57,5 +58,7 @@ renamePlan.forEach((step) => {
   );
 });
 
-writePuzzleIndex(paths.indexPath, renamePlan.map((step) => step.to));
+writePuzzleIndex(paths.indexPath, renamePlan.map((step, index) => {
+  return createPuzzleIndexEntry(step.to, puzzleEntries[index].puzzle);
+}));
 console.log(`Renumbered ${renamePlan.length} puzzle files.`);

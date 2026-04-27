@@ -1,9 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const {
+  createPuzzleIndexEntry,
   ensurePuzzlesDir,
   getProjectPaths,
   getPuzzleJsonFiles,
+  readPuzzleFile,
   validatePuzzle,
   writePuzzleIndex
 } = require("./puzzle-file-utils");
@@ -34,7 +36,12 @@ if (fs.existsSync(nextFilePath)) {
 fs.writeFileSync(nextFilePath, `${JSON.stringify(draftPuzzle, null, 2)}\n`, "utf8");
 
 const updatedIndex = getPuzzleJsonFiles(paths.puzzlesDir)
-  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+  .map((fileName) => {
+    const puzzle = readPuzzleFile(paths.puzzlesDir, fileName);
+    validatePuzzle(puzzle);
+    return createPuzzleIndexEntry(fileName, puzzle);
+  });
 
 writePuzzleIndex(paths.indexPath, updatedIndex);
 console.log(`Imported draft puzzle to puzzles/${nextFileName}.`);

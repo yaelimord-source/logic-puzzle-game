@@ -135,9 +135,19 @@
       margin-top: 10px;
     }
 
+    #tutorial-text {
+      white-space: pre-line;
+    }
+
     td.answer.tutorial-target {
       background: #fef08a;
       box-shadow: inset 0 0 0 3px #f59e0b;
+    }
+
+    .tutorial-clue {
+      background: #fef3c7;
+      border-radius: 8px;
+      padding: 2px 6px;
     }
 
     #story,
@@ -507,6 +517,7 @@
       <div id="story"></div>
       <div id="controls">
         <button id="puzzle-home-button" class="icon-button" type="button" title="חזרה למסך הבית" aria-label="חזרה למסך הבית">🏠</button>
+        <button id="tutorial-button" class="icon-button" type="button" title="הדרכה" aria-label="הדרכה">📖</button>
         <button id="reset-button" class="icon-button" type="button" title="מחק הכל" aria-label="מחק הכל">⌫</button>
         <button id="undo-button" class="icon-button" type="button" title="חזור" aria-label="חזור">↶</button>
         <button id="hint-button" class="icon-button" type="button" title="רמז" aria-label="רמז">💡</button>
@@ -542,6 +553,8 @@
   <div id="tutorial-overlay" role="dialog" aria-modal="true" aria-live="polite">
     <div id="tutorial-bubble">
       <div id="tutorial-text"></div>
+      <button id="tutorial-next-button" type="button">המשך</button>
+      <button id="tutorial-finish-button" type="button" hidden>המשך לבד</button>
       <button id="tutorial-skip-button" type="button">דלג על ההדרכה</button>
     </div>
   </div>
@@ -549,6 +562,7 @@
   <script>
     let currentPuzzle;
     let allPuzzles = [];
+    const puzzleCache = {};
     let selectedDifficulty = "";
     const progressStorageKey = "logicPuzzleCompletedIds";
     const tutorialStorageKey = "logicPuzzleTutorialSeen";
@@ -927,6 +941,7 @@
 
       currentPuzzle.clues.forEach((clue, index) => {
         const clueLine = document.createElement("div");
+        clueLine.dataset.clueIndex = String(index);
         clueLine.textContent = `${index + 1}. ${clue}`;
         cluesElement.appendChild(clueLine);
       });
@@ -1011,22 +1026,83 @@
     }
 
     function getTutorialTargets() {
-      const [primaryCategory, secondCategory, thirdCategory] = getPuzzleCategories();
+      const [, secondCategory, thirdCategory] = getPuzzleCategories();
 
       return {
-        impossibleCell: {
-          rowType: thirdCategory.key,
-          rowValue: thirdCategory.items[1],
-          columnType: secondCategory.key,
-          columnValue: secondCategory.items[0],
-          mark: "X"
-        },
-        correctCell: {
+        coffeeRed: {
           rowType: thirdCategory.key,
           rowValue: thirdCategory.items[0],
           columnType: secondCategory.key,
           columnValue: secondCategory.items[0],
           mark: "○"
+        },
+        coffeeNotOtherColors: [
+          {
+            rowType: thirdCategory.key,
+            rowValue: thirdCategory.items[1],
+            columnType: secondCategory.key,
+            columnValue: secondCategory.items[0],
+            mark: "X"
+          },
+          {
+            rowType: thirdCategory.key,
+            rowValue: thirdCategory.items[2],
+            columnType: secondCategory.key,
+            columnValue: secondCategory.items[0],
+            mark: "X"
+          }
+        ],
+        redNotOtherDrinks: [
+          {
+            rowType: thirdCategory.key,
+            rowValue: thirdCategory.items[0],
+            columnType: secondCategory.key,
+            columnValue: secondCategory.items[1],
+            mark: "X"
+          },
+          {
+            rowType: thirdCategory.key,
+            rowValue: thirdCategory.items[0],
+            columnType: secondCategory.key,
+            columnValue: secondCategory.items[2],
+            mark: "X"
+          }
+        ],
+        blueTea: {
+          rowType: thirdCategory.key,
+          rowValue: thirdCategory.items[1],
+          columnType: secondCategory.key,
+          columnValue: secondCategory.items[1],
+          mark: "○"
+        },
+        blueNotCocoa: {
+          rowType: thirdCategory.key,
+          rowValue: thirdCategory.items[1],
+          columnType: secondCategory.key,
+          columnValue: secondCategory.items[2],
+          mark: "X"
+        },
+        teaNotGreen: {
+          rowType: thirdCategory.key,
+          rowValue: thirdCategory.items[2],
+          columnType: secondCategory.key,
+          columnValue: secondCategory.items[1],
+          mark: "X"
+        },
+        cocoaGreen: {
+          rowType: thirdCategory.key,
+          rowValue: thirdCategory.items[2],
+          columnType: secondCategory.key,
+          columnValue: secondCategory.items[2],
+          mark: "○"
+        },
+        values: {
+          coffee: secondCategory.items[0],
+          tea: secondCategory.items[1],
+          cocoa: secondCategory.items[2],
+          red: thirdCategory.items[0],
+          blue: thirdCategory.items[1],
+          green: thirdCategory.items[2]
         }
       };
     }
@@ -1228,16 +1304,36 @@
       initializeGame();
     }
 
-    function loadPuzzleById(puzzleId) {
-      const puzzle = allPuzzles.find((item) => item.id === puzzleId);
+    async function loadPuzzleById(puzzleId) {
+      const puzzleSummary = allPuzzles.find((item) => item.id === puzzleId);
 
-      if (puzzle) {
-        loadPuzzle(puzzle);
+      if (!puzzleSummary) {
+        return;
+      }
+
+      try {
+        if (!puzzleCache[puzzleSummary.id]) {
+          const response = await fetch(getPuzzleFileUrl(puzzleSummary.file));
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const puzzle = await response.json();
+          validatePuzzleData(puzzle);
+          puzzleCache[puzzleSummary.id] = puzzle;
+        }
+
+        loadPuzzle(puzzleCache[puzzleSummary.id]);
+      } catch (error) {
+        document.getElementById("level-message").textContent = "שגיאה: לא ניתן לטעון את החידה.";
+        console.error("Failed to load selected puzzle:", puzzleSummary.file, error);
       }
     }
 
     function returnHome() {
       setHintMode(false);
+      finishTutorial();
       document.getElementById("win-overlay").style.display = "none";
       document.getElementById("check-message").textContent = "";
       renderLevelScreen(selectedDifficulty || "קל");
@@ -1247,7 +1343,7 @@
       const sameDifficultyPuzzles = allPuzzles
         .filter((puzzle) => normalizeDifficulty(puzzle.difficulty) === normalizeDifficulty(currentPuzzle.difficulty))
         .sort((a, b) => a.levelNumber - b.levelNumber);
-      const currentIndex = sameDifficultyPuzzles.indexOf(currentPuzzle);
+      const currentIndex = sameDifficultyPuzzles.findIndex((puzzle) => puzzle.id === currentPuzzle.id);
       const nextPuzzle = sameDifficultyPuzzles[currentIndex + 1];
 
       if (!nextPuzzle) {
@@ -1266,10 +1362,11 @@
       }
     };
     document.getElementById("tutorial-skip-button").onclick = skipTutorial;
+    document.getElementById("tutorial-next-button").onclick = advanceTutorial;
+    document.getElementById("tutorial-finish-button").onclick = finishTutorial;
     document.getElementById("show-tutorial-button").onclick = () => {
       closeHelp();
       startTutorial(true);
-      setTimeout(advanceTutorial, 900);
     };
 
     function setHintMode(isActive) {
@@ -1282,6 +1379,21 @@
       document.querySelectorAll(".tutorial-target").forEach((cell) => {
         cell.classList.remove("tutorial-target");
       });
+    }
+
+    function clearTutorialClueHighlight() {
+      document.querySelectorAll(".tutorial-clue").forEach((clue) => {
+        clue.classList.remove("tutorial-clue");
+      });
+    }
+
+    function highlightTutorialClue(index) {
+      clearTutorialClueHighlight();
+      const clue = document.querySelector(`[data-clue-index="${index}"]`);
+
+      if (clue) {
+        clue.classList.add("tutorial-clue");
+      }
     }
 
     function setTutorialText(text) {
@@ -1305,31 +1417,60 @@
       }
     }
 
+    function highlightTutorialTargets(targets) {
+      clearTutorialHighlights();
+      targets.forEach((target) => {
+        const cell = findAnswerCell(target);
+
+        if (cell) {
+          cell.classList.add("tutorial-target");
+        }
+      });
+    }
+
+    function isTargetMarked(target) {
+      const cell = findAnswerCell(target);
+      return Boolean(cell && cell.textContent === target.mark);
+    }
+
+    function areTargetsMarked(targets) {
+      return targets.every(isTargetMarked);
+    }
+
+    function setTutorialSkipVisible(isVisible) {
+      document.getElementById("tutorial-skip-button").hidden = !isVisible;
+    }
+
     function startTutorial(force = false) {
       if (!isTutorialPuzzle()) {
         return;
       }
 
-      if (!force && localStorage.getItem(tutorialStorageKey) === "true") {
+      if (!force && localStorage.getItem(tutorialStorageKey) === "skipped") {
         return;
       }
 
       tutorialActive = true;
       tutorialStep = 1;
       showTutorialOverlay();
-      setTutorialText("הרמזים עוזרים לנו לפסול התאמות שלא יכולות להיות נכונות.");
+      setTutorialSkipVisible(true);
+      setTutorialText("בואו נפתור יחד את ההתחלה. נעבור על הרמזים, נסמן התאמות נכונות ב־○ ודברים שלא יכולים להתאים ב־X.");
       clearTutorialHighlights();
+      clearTutorialClueHighlight();
+      document.getElementById("tutorial-next-button").hidden = false;
+      document.getElementById("tutorial-finish-button").hidden = true;
     }
 
     function finishTutorial() {
       tutorialActive = false;
       tutorialStep = 0;
       clearTutorialHighlights();
+      clearTutorialClueHighlight();
       hideTutorialOverlay();
-      localStorage.setItem(tutorialStorageKey, "true");
     }
 
     function skipTutorial() {
+      localStorage.setItem(tutorialStorageKey, "skipped");
       finishTutorial();
     }
 
@@ -1342,22 +1483,68 @@
 
       if (tutorialStep === 1) {
         tutorialStep = 2;
-        setTutorialText(`לפי הרמז הראשון, ${targets.impossibleCell.columnValue} לא יכול להתאים ל${targets.impossibleCell.rowValue}. סמנו X במשבצת המסומנת.`);
-        highlightTutorialTarget(targets.impossibleCell);
+        highlightTutorialClue(0);
+        setTutorialText("הרמז אומר שמי ששותה קפה משתמש בכוס אדומה. לכן נסמן ○ במשבצת שמחברת בין קפה לאדום. כדי לסמן ○ לוחצים פעמיים על התא.");
+        highlightTutorialTarget(targets.coffeeRed);
+        document.getElementById("tutorial-next-button").hidden = true;
         return;
       }
 
       if (tutorialStep === 3) {
         tutorialStep = 4;
-        setTutorialText(`עכשיו סמנו ○ במשבצת של ${targets.correctCell.columnValue} ו${targets.correctCell.rowValue}. זו התאמה נכונה לפי הרמז.`);
-        highlightTutorialTarget(targets.correctCell);
+        highlightTutorialClue(0);
+        setTutorialText("אם קפה הוא אדום, הוא לא יכול להיות כחול או ירוק. כדי לסמן X לוחצים פעם אחת על התא. סמנו X בשתי המשבצות המסומנות.");
+        highlightTutorialTargets(targets.coffeeNotOtherColors);
         return;
       }
 
       if (tutorialStep === 5) {
-        setTutorialText("מעולה, עכשיו אפשר להמשיך לבד.");
+        tutorialStep = 6;
+        highlightTutorialClue(0);
+        setTutorialText("וגם להפך: אם אדום שייך לקפה, הוא לא שייך לתה או לשוקו. סמנו X בשתי המשבצות המסומנות.");
+        highlightTutorialTargets(targets.redNotOtherDrinks);
+        return;
+      }
+
+      if (tutorialStep === 7) {
+        tutorialStep = 8;
+        highlightTutorialClue(1);
+        setTutorialText("הרמז הבא אומר שמי שמשתמש בכוס כחולה שותה תה. סמנו ○ במשבצת שמחברת בין כחול לתה.");
+        highlightTutorialTarget(targets.blueTea);
+        return;
+      }
+
+      if (tutorialStep === 9) {
+        tutorialStep = 10;
+        highlightTutorialClue(1);
+        setTutorialText("אם כחול מתאים לתה, אז כחול לא מתאים לשוקו. סמנו X במשבצת המסומנת.");
+        highlightTutorialTarget(targets.blueNotCocoa);
+        return;
+      }
+
+      if (tutorialStep === 11) {
+        tutorialStep = 12;
+        highlightTutorialClue(1);
+        setTutorialText("וגם תה לא יכול להתאים לירוק. סמנו X במשבצת המסומנת.");
+        highlightTutorialTarget(targets.teaNotGreen);
+        return;
+      }
+
+      if (tutorialStep === 13) {
+        tutorialStep = 14;
+        highlightTutorialClue(1);
+        setTutorialText("עכשיו נשארה רק אפשרות אחת: שוקו מתאים לירוק. סמנו ○ במשבצת המסומנת.");
+        highlightTutorialTarget(targets.cocoaGreen);
+        return;
+      }
+
+      if (tutorialStep === 15) {
+        tutorialStep = 16;
+        setTutorialSkipVisible(false);
+        document.getElementById("tutorial-next-button").hidden = true;
+        document.getElementById("tutorial-finish-button").hidden = false;
+        setTutorialText("מעולה. עכשיו יש לך את הבסיס: ○ להתאמה, X לשלילה, ומשתמשים בכל סימון כדי להסיק עוד מסקנות. מכאן אפשר להמשיך לבד מהרמז הבא.");
         clearTutorialHighlights();
-        setTimeout(finishTutorial, 1600);
       }
     }
 
@@ -1370,25 +1557,70 @@
 
       if (
         tutorialStep === 2
-        && cell === findAnswerCell(targets.impossibleCell)
-        && cell.textContent === "X"
+        && cell === findAnswerCell(targets.coffeeRed)
+        && cell.textContent === "○"
       ) {
         tutorialStep = 3;
-        setTutorialText("נכון! X אומר שההתאמה הזו בלתי אפשרית.");
         clearTutorialHighlights();
-        setTimeout(advanceTutorial, 1200);
+        advanceTutorial();
+        return;
+      }
+
+      if (tutorialStep === 4 && areTargetsMarked(targets.coffeeNotOtherColors)) {
+        tutorialStep = 5;
+        clearTutorialHighlights();
+        advanceTutorial();
+        return;
+      }
+
+      if (tutorialStep === 6 && areTargetsMarked(targets.redNotOtherDrinks)) {
+        tutorialStep = 7;
+        clearTutorialHighlights();
+        advanceTutorial();
         return;
       }
 
       if (
-        tutorialStep === 4
-        && cell === findAnswerCell(targets.correctCell)
+        tutorialStep === 8
+        && cell === findAnswerCell(targets.blueTea)
         && cell.textContent === "○"
       ) {
-        tutorialStep = 5;
-        setTutorialText("יפה! ○ אומר שמצאתם התאמה נכונה.");
+        tutorialStep = 9;
         clearTutorialHighlights();
-        setTimeout(advanceTutorial, 1200);
+        advanceTutorial();
+        return;
+      }
+
+      if (
+        tutorialStep === 10
+        && cell === findAnswerCell(targets.blueNotCocoa)
+        && cell.textContent === "X"
+      ) {
+        tutorialStep = 11;
+        clearTutorialHighlights();
+        advanceTutorial();
+        return;
+      }
+
+      if (
+        tutorialStep === 12
+        && cell === findAnswerCell(targets.teaNotGreen)
+        && cell.textContent === "X"
+      ) {
+        tutorialStep = 13;
+        clearTutorialHighlights();
+        advanceTutorial();
+        return;
+      }
+
+      if (
+        tutorialStep === 14
+        && cell === findAnswerCell(targets.cocoaGreen)
+        && cell.textContent === "○"
+      ) {
+        tutorialStep = 15;
+        clearTutorialHighlights();
+        advanceTutorial();
       }
     }
 
@@ -1408,10 +1640,11 @@
       renderStory();
       buildGrid();
       renderClues();
+      document.getElementById("tutorial-button").hidden = !isTutorialPuzzle();
+      document.getElementById("tutorial-button").onclick = () => {
+        startTutorial(true);
+      };
       startTutorial();
-      if (tutorialActive) {
-        setTimeout(advanceTutorial, 900);
-      }
       document.getElementById("reset-button").onclick = resetGrid;
       document.getElementById("undo-button").onclick = undoLastAction;
       document.getElementById("hint-button").onclick = revealHint;
@@ -1431,6 +1664,38 @@
       return getAssetUrl(normalizedPath);
     }
 
+    function getManifestFilePath(entry) {
+      return typeof entry === "string"
+        ? entry
+        : entry.file || entry.path || entry.fileName;
+    }
+
+    function normalizeManifestEntry(entry) {
+      if (typeof entry === "string") {
+        return {
+          file: entry,
+          id: entry,
+          difficulty: "קל",
+          levelNumber: Number.parseInt(entry, 10) || 0,
+          title: ""
+        };
+      }
+
+      return {
+        ...entry,
+        file: getManifestFilePath(entry)
+      };
+    }
+
+    function validatePuzzleManifestEntry(entry) {
+      const requiredFields = ["file", "id", "difficulty", "levelNumber", "title"];
+      const missingField = requiredFields.find((field) => entry[field] === undefined || entry[field] === null || entry[field] === "");
+
+      if (missingField) {
+        throw new Error(`Missing required puzzle index field: ${missingField}`);
+      }
+    }
+
     async function loadCurrentPuzzle() {
       try {
         const manifestResponse = await fetch(getAssetUrl("puzzles/index.json"));
@@ -1445,33 +1710,8 @@
           throw new Error("Puzzle index must be an array");
         }
 
-        console.log("Puzzle index files:", puzzleFiles);
-
-        allPuzzles = [];
-        const failedPuzzles = [];
-
-        for (const filePath of puzzleFiles) {
-          try {
-            const response = await fetch(getPuzzleFileUrl(filePath));
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
-
-            const puzzle = await response.json();
-            validatePuzzleData(puzzle);
-            allPuzzles.push(puzzle);
-            console.log("Loaded puzzle:", filePath, puzzle);
-          } catch (error) {
-            failedPuzzles.push({ filePath, error });
-            console.error("Failed to load puzzle:", filePath, error);
-          }
-        }
-
-        console.log("Puzzle load summary:", {
-          loaded: allPuzzles.length,
-          failed: failedPuzzles.length
-        });
+        allPuzzles = puzzleFiles.map(normalizeManifestEntry);
+        allPuzzles.forEach(validatePuzzleManifestEntry);
         selectedDifficulty = "קל";
         renderLevelScreen(selectedDifficulty);
       } catch (error) {
