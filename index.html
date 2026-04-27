@@ -1248,7 +1248,17 @@
         console.log("Level render debug: rendered difficulty section", {
           difficulty: difficultyName,
           displayedPuzzles: matchingPuzzles.length,
-          highestLevelNumber
+          highestLevelNumber,
+          puzzles: matchingPuzzles.map((puzzle) => {
+            return {
+              id: puzzle.id,
+              file: puzzle.file,
+              rawDifficulty: puzzle.difficulty,
+              levelNumber: puzzle.levelNumber,
+              unlocked: isPuzzleUnlocked(puzzle, matchingPuzzles),
+              completed: isPuzzleCompleted(puzzle.id)
+            };
+          })
         });
 
         const section = document.createElement("section");
@@ -1710,8 +1720,17 @@
           throw new Error("Puzzle index must be an array");
         }
 
+        console.log("Puzzle index loaded:", {
+          entries: puzzleFiles.length,
+          rawIndex: puzzleFiles
+        });
         allPuzzles = puzzleFiles.map(normalizeManifestEntry);
+        console.log("Puzzle index normalized:", {
+          entries: allPuzzles.length,
+          normalizedIndex: allPuzzles
+        });
         allPuzzles.forEach(validatePuzzleManifestEntry);
+        console.log("Puzzle manifest validation succeeded:", allPuzzles.length);
         selectedDifficulty = "קל";
         renderLevelScreen(selectedDifficulty);
       } catch (error) {
