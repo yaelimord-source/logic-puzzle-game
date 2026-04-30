@@ -467,18 +467,56 @@
       font-size: 1.1rem;
       font-weight: 600;
       line-height: 1.35;
-      margin: 0 0 12px;
+      margin: 0;
       text-align: right;
     }
 
-    .level-grid {
-      display: grid;
+    .difficulty-card-header {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
       gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(64px, 64px));
+      margin-bottom: 10px;
+    }
+
+    .difficulty-progress-text {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .progress-track {
+      background: var(--surface-muted);
+      border-radius: 999px;
+      height: 7px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: inherit;
+      height: 100%;
+      transition: width 180ms ease;
+    }
+
+    .level-grid {
+      display: flex;
+      gap: 12px;
+      grid-template-columns: none;
       max-width: 100%;
+      overflow-x: auto;
+      overscroll-behavior-inline: contain;
+      padding: 4px 2px 10px;
+      scroll-behavior: smooth;
+      scroll-snap-type: x proximity;
+      scrollbar-width: thin;
     }
 
     .level-tile {
+      flex: 0 0 64px;
       align-items: center;
       aspect-ratio: 1;
       border: 1px solid var(--border);
@@ -493,6 +531,59 @@
       min-height: 64px;
       padding: 0;
       position: relative;
+      scroll-snap-align: center;
+    }
+
+    .level-tile.next-playable {
+      flex-basis: 112px;
+      transform: scale(1.04);
+    }
+
+    .level-tile .level-number {
+      position: relative;
+      z-index: 1;
+    }
+
+    .level-tile.completed::after {
+      content: "✓";
+      align-items: center;
+      background: var(--success);
+      border-radius: 999px;
+      color: #fff;
+      display: flex;
+      font-size: 12px;
+      height: 20px;
+      justify-content: center;
+      left: 6px;
+      position: absolute;
+      top: 6px;
+      width: 20px;
+    }
+
+    .level-tile.locked {
+      color: rgba(32, 48, 56, 0.58);
+    }
+
+    .level-tile.locked::after {
+      opacity: 0.72;
+      transform: scale(0.82);
+    }
+
+    .coming-soon-tile {
+      align-items: center;
+      background: rgba(255, 255, 255, 0.48);
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      color: var(--muted);
+      display: flex;
+      flex: 0 0 132px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      justify-content: center;
+      min-height: 64px;
+      padding: 0 12px;
+      scroll-snap-align: center;
+      text-align: center;
     }
 
     .level-tile.completed {
@@ -517,11 +608,13 @@
 
     .level-tile.locked::after {
       content: "";
-      width: 16px;
-      height: 12px;
+      width: 13px;
+      height: 10px;
       border: 1.8px solid #64707d;
       border-radius: 3px;
-      position: relative;
+      position: absolute;
+      left: 7px;
+      top: 10px;
       align-items: center;
       display: block;
       justify-content: center;
@@ -529,14 +622,14 @@
 
     .level-tile.locked::before {
       content: "";
-      width: 10px;
-      height: 9px;
+      width: 8px;
+      height: 7px;
       border: 1.8px solid #64707d;
       border-bottom: 0;
       border-radius: 8px 8px 0 0;
       position: absolute;
-      top: calc(50% - 14px);
-      left: calc(50% - 5px);
+      top: 4px;
+      left: 9.5px;
       z-index: 1;
     }
 
@@ -556,7 +649,17 @@
       }
 
       .level-tile {
+        flex-basis: 56px;
         max-width: none;
+        min-height: 52px;
+      }
+
+      .level-tile.next-playable {
+        flex-basis: 104px;
+      }
+
+      .coming-soon-tile {
+        flex-basis: 116px;
         min-height: 52px;
       }
 
@@ -744,7 +847,52 @@
     .thick-left {
       border-left-width: 3px;
     }
-  </style>
+    #puzzle-screen {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+.level-tile.next-playable {
+  background: #E3FCEE;
+  font-size: 1.2em;
+}
+
+.timer-badge {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 0.95rem;
+  font-weight: 600;
+  justify-content: center;
+  min-width: 68px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 18px rgba(42, 63, 72, 0.08);
+}
+
+.completion-stats {
+  background: rgba(247, 248, 245, 0.82);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--text);
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 4px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.completion-stats p {
+  margin: 0;
+}
+
+.completion-stats .first-record {
+  color: var(--primary);
+  font-weight: 700;
+}
+</style>
 </head>
 <body dir="rtl">
   <main class="app-shell">
@@ -1528,9 +1676,39 @@
         const section = document.createElement("section");
         section.className = "difficulty-section";
 
+        const header = document.createElement("div");
+        header.className = "difficulty-card-header";
+
         const title = document.createElement("h2");
         title.textContent = difficultyName;
-        section.appendChild(title);
+        header.appendChild(title);
+
+        const completedCount = matchingPuzzles.filter((puzzle) => {
+          return isPuzzleCompleted(puzzle.id);
+        }).length;
+        const currentIndex = matchingPuzzles.findIndex((puzzle) => {
+          return isPuzzleUnlocked(puzzle, matchingPuzzles) && !isPuzzleCompleted(puzzle.id);
+        });
+        const displayCurrent = matchingPuzzles.length === 0
+          ? 0
+          : currentIndex === -1
+            ? matchingPuzzles.length
+            : currentIndex + 1;
+        const progressText = document.createElement("div");
+        progressText.className = "difficulty-progress-text";
+        progressText.textContent = `שלב ${displayCurrent} מתוך ${matchingPuzzles.length}`;
+        header.appendChild(progressText);
+        section.appendChild(header);
+
+        const progressTrack = document.createElement("div");
+        progressTrack.className = "progress-track";
+        const progressFill = document.createElement("div");
+        progressFill.className = "progress-fill";
+        progressFill.style.width = matchingPuzzles.length === 0
+          ? "0%"
+          : `${(completedCount / matchingPuzzles.length) * 100}%`;
+        progressTrack.appendChild(progressFill);
+        section.appendChild(progressTrack);
 
         const grid = document.createElement("div");
         grid.className = "level-grid";
@@ -1542,16 +1720,21 @@
           const button = document.createElement("button");
           button.type = "button";
           button.className = "level-tile";
-          button.textContent = unlocked ? index + 1 : "";
           button.disabled = !unlocked;
           button.title = unlocked ? "" : "יש להשלים את השלב הקודם קודם";
+          const levelNumber = document.createElement("span");
+          levelNumber.className = "level-number";
+          levelNumber.textContent = String(index + 1);
 
           if (completed) {
             button.classList.add("completed");
+            button.appendChild(levelNumber);
           } else if (nextPlayable) {
             button.classList.add("next-playable");
+        button.textContent = index + 1;
           } else {
             button.classList.add("locked");
+            button.appendChild(levelNumber);
           }
 
           button.addEventListener("click", () => {
@@ -1565,8 +1748,27 @@
           grid.appendChild(button);
         });
 
+        const comingSoon = document.createElement("div");
+        comingSoon.className = "coming-soon-tile";
+        comingSoon.textContent = "שלבים נוספים בקרוב";
+        grid.appendChild(comingSoon);
+
         section.appendChild(grid);
         levelsElement.appendChild(section);
+
+        const activeTile = grid.querySelector(".next-playable")
+          || grid.querySelector(".level-tile:not(.locked)")
+          || grid.querySelector(".level-tile");
+
+        if (activeTile) {
+          setTimeout(() => {
+            activeTile.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+              inline: "center"
+            });
+          }, 0);
+        }
       });
 
       showScreen("level-screen");
@@ -2025,6 +2227,242 @@
     }
 
     loadCurrentPuzzle();
-  </script>
+const puzzleTimeStorageKey = "logicPuzzleTimeStats";
+let activePuzzleTimerId = null;
+let activePuzzleTimerStart = 0;
+let activePuzzleTimerElapsed = 0;
+let activePuzzleTimerInterval = null;
+let savedTimerStatsForPuzzle = null;
+
+function formatPuzzleTime(totalSeconds) {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0));
+  const minutes = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
+  const seconds = String(safeSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function getPuzzleTimeStats() {
+  try {
+    return JSON.parse(localStorage.getItem(puzzleTimeStorageKey)) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function savePuzzleTimeStats(stats) {
+  localStorage.setItem(puzzleTimeStorageKey, JSON.stringify(stats));
+}
+
+function getCurrentPuzzleTimerId() {
+  return currentPuzzle?.id || currentPuzzle?.title || "current-puzzle";
+}
+
+function getTimerBadge() {
+  let timerBadge = document.getElementById("puzzle-timer");
+
+  if (!timerBadge) {
+    timerBadge = document.createElement("span");
+    timerBadge.id = "puzzle-timer";
+    timerBadge.className = "timer-badge";
+    timerBadge.setAttribute("aria-label", "זמן פתרון");
+  }
+
+  const controls = document.getElementById("controls");
+  if (controls && timerBadge.parentElement !== controls) {
+    controls.appendChild(timerBadge);
+  }
+
+  return timerBadge;
+}
+
+function updatePuzzleTimerDisplay() {
+  if (!activePuzzleTimerStart) {
+    return;
+  }
+
+  activePuzzleTimerElapsed = Math.floor((Date.now() - activePuzzleTimerStart) / 1000);
+  getTimerBadge().textContent = formatPuzzleTime(activePuzzleTimerElapsed);
+}
+
+function startPuzzleTimer() {
+  clearInterval(activePuzzleTimerInterval);
+  activePuzzleTimerId = getCurrentPuzzleTimerId();
+  activePuzzleTimerStart = Date.now();
+  activePuzzleTimerElapsed = 0;
+  savedTimerStatsForPuzzle = null;
+  getTimerBadge().textContent = "00:00";
+  activePuzzleTimerInterval = setInterval(updatePuzzleTimerDisplay, 1000);
+}
+
+function stopPuzzleTimer() {
+  clearInterval(activePuzzleTimerInterval);
+  activePuzzleTimerInterval = null;
+
+  if (activePuzzleTimerStart) {
+    activePuzzleTimerElapsed = Math.floor((Date.now() - activePuzzleTimerStart) / 1000);
+  }
+
+  updatePuzzleTimerDisplay();
+  return activePuzzleTimerElapsed;
+}
+
+function recordPuzzleCompletionTime(puzzleId, elapsedSeconds) {
+  const stats = getPuzzleTimeStats();
+  const completion = {
+    puzzleId,
+    elapsedSeconds,
+    solvedAt: new Date().toISOString(),
+    difficulty: normalizeDifficulty(currentPuzzle?.difficulty)
+  };
+
+  stats[puzzleId] = {
+    puzzleId,
+    lastCompletionTime: elapsedSeconds,
+    completions: [...(stats[puzzleId]?.completions || []), completion]
+  };
+  savePuzzleTimeStats(stats);
+
+  return completion;
+}
+
+function getWinDialogElement() {
+  const winOverlay = document.getElementById("win-overlay");
+  return (
+    document.getElementById("win-modal") ||
+    document.querySelector(".win-modal") ||
+    winOverlay?.querySelector(".modal, [role='dialog'], .overlay-content") ||
+    winOverlay
+  );
+}
+
+function renderCompletionStats(elapsedSeconds) {
+  const winDialog = getWinDialogElement();
+  if (!winDialog) {
+    return;
+  }
+
+  let statsElement = document.getElementById("completion-stats");
+  if (!statsElement) {
+    statsElement = document.createElement("div");
+    statsElement.id = "completion-stats";
+    statsElement.className = "completion-stats";
+  }
+
+  statsElement.innerHTML = `<p>סיימת ב־${formatPuzzleTime(elapsedSeconds)}</p>`;
+
+  const firstButton = winDialog.querySelector("button");
+  if (firstButton?.parentElement) {
+    firstButton.parentElement.insertBefore(statsElement, firstButton);
+  } else {
+    winDialog.appendChild(statsElement);
+  }
+}
+
+function handlePuzzleTimerSolved() {
+  const puzzleId = activePuzzleTimerId || getCurrentPuzzleTimerId();
+  if (!puzzleId || savedTimerStatsForPuzzle === puzzleId) {
+    return;
+  }
+
+  const elapsedSeconds = stopPuzzleTimer();
+  recordPuzzleCompletionTime(puzzleId, elapsedSeconds);
+  savedTimerStatsForPuzzle = puzzleId;
+  renderCompletionStats(elapsedSeconds);
+}
+
+function isWinOverlayVisible() {
+  const winOverlay = document.getElementById("win-overlay");
+  if (!winOverlay) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(winOverlay);
+  return (
+    !winOverlay.hidden &&
+    !winOverlay.classList.contains("hidden") &&
+    style.display !== "none" &&
+    style.visibility !== "hidden" &&
+    style.opacity !== "0"
+  );
+}
+
+function isPuzzleScreenVisible() {
+  const puzzleScreen = document.getElementById("puzzle-screen");
+  if (!puzzleScreen) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(puzzleScreen);
+  return (
+    !puzzleScreen.hidden &&
+    !puzzleScreen.classList.contains("hidden") &&
+    style.display !== "none" &&
+    style.visibility !== "hidden"
+  );
+}
+
+function syncPuzzleTimerWithVisibleScreen() {
+  const puzzleId = getCurrentPuzzleTimerId();
+  if (isPuzzleScreenVisible() && currentPuzzle && activePuzzleTimerId !== puzzleId) {
+    startPuzzleTimer();
+  }
+}
+
+try {
+  if (typeof initializeGame === "function") {
+    const originalInitializeGameForTimer = initializeGame;
+    initializeGame = function initializeGameWithTimer(...args) {
+      const result = originalInitializeGameForTimer.apply(this, args);
+      startPuzzleTimer();
+      return result;
+    };
+  }
+} catch (error) {
+  console.warn("Puzzle timer could not attach to puzzle start.", error);
+}
+
+try {
+  if (typeof showWinOverlay === "function") {
+    const originalShowWinOverlayForTimer = showWinOverlay;
+    showWinOverlay = function showWinOverlayWithTimer(...args) {
+      const result = originalShowWinOverlayForTimer.apply(this, args);
+      handlePuzzleTimerSolved();
+      return result;
+    };
+  }
+} catch (error) {
+  console.warn("Puzzle timer could not attach to win overlay.", error);
+}
+
+const winTimerObserver = new MutationObserver(() => {
+  if (isWinOverlayVisible()) {
+    handlePuzzleTimerSolved();
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const winOverlay = document.getElementById("win-overlay");
+  if (winOverlay) {
+    winTimerObserver.observe(winOverlay, {
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden"],
+      childList: true,
+      subtree: true
+    });
+  }
+
+  const screenTimerObserver = new MutationObserver(syncPuzzleTimerWithVisibleScreen);
+  screenTimerObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class", "style", "hidden"],
+    childList: true,
+    subtree: true
+  });
+
+  document.addEventListener("click", () => {
+    setTimeout(syncPuzzleTimerWithVisibleScreen, 0);
+  });
+});
+</script>
 </body>
 </html>
