@@ -1,0 +1,24 @@
+{
+  "status": "NEEDS_MANUAL_REVIEW",
+  "possibleSolutions": 0,
+  "parserCoverage": 57,
+  "reason": "72.json failed validation: NEEDS_MANUAL_REVIEW, 0 solution(s), 57% parser coverage.",
+  "qualityReview": null,
+  "unsupportedClues": [
+    {
+      "clueNumber": 2,
+      "clue": "המשלוח של עוגת גזר לא בוצע ראשון.",
+      "reason": "Could not identify at least two known category values."
+    },
+    {
+      "clueNumber": 4,
+      "clue": "מאיה מסרה משלוח מאוחר יותר מאשר גילי.",
+      "reason": "Positive equality clue mentions two values from the same category."
+    },
+    {
+      "clueNumber": 6,
+      "clue": "גילי מסר משלוח בשעה מוקדמת יותר ממאיה, אך לא ראשון.",
+      "reason": "Negative clue does not identify a value from another category."
+    }
+  ]
+}

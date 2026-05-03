@@ -1,6 +1,30 @@
 <!DOCTYPE html>
 <html lang="he">
 <head>
+  <script>
+    (function preventStalePuzzleJson() {
+      const originalFetch = window.fetch.bind(window);
+
+      window.fetch = function fetchWithFreshPuzzleJson(input, init) {
+        const url =
+          typeof input === "string"
+            ? input
+            : input && typeof input.url === "string"
+              ? input.url
+              : "";
+        const shouldBypassCache = /(^|\/)puzzles\/[^?#]+\.json([?#]|$)/.test(url);
+
+        if (!shouldBypassCache) {
+          return originalFetch(input, init);
+        }
+
+        return originalFetch(input, {
+          ...(init || {}),
+          cache: "no-store"
+        });
+      };
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -855,6 +879,27 @@
 .level-tile.next-playable {
   background: #E3FCEE;
   font-size: 1.2em;
+}
+
+.debug-unlock-button,
+.debug-clear-storage-button {
+  background: transparent;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  margin: 10px auto 0;
+  padding: 8px 14px;
+}
+
+.debug-unlock-button:hover,
+.debug-unlock-button:focus-visible,
+.debug-clear-storage-button:hover,
+.debug-clear-storage-button:focus-visible {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .timer-badge {
@@ -1724,7 +1769,7 @@
           button.title = unlocked ? "" : "יש להשלים את השלב הקודם קודם";
           const levelNumber = document.createElement("span");
           levelNumber.className = "level-number";
-          levelNumber.textContent = String(index + 1);
+          levelNumber.textContent = String(puzzle.levelNumber || index + 1);
 
           if (completed) {
             button.classList.add("completed");
@@ -2234,6 +2279,121 @@ let activePuzzleTimerElapsed = 0;
 let activePuzzleTimerInterval = null;
 let savedTimerStatsForPuzzle = null;
 
+function normalizeCurrentPuzzleSolutionShape() {
+  if (!currentPuzzle?.categories || !currentPuzzle?.solution) {
+    return;
+  }
+
+  const categoryKeys = Object.keys(currentPuzzle.categories);
+  const primaryKey = categoryKeys[0];
+  const primaryItems = currentPuzzle.categories[primaryKey] || [];
+  const labels = currentPuzzle.categoryLabels || {};
+  const labelToKey = Object.fromEntries(
+    Object.entries(labels).map(([key, label]) => [label, key])
+  );
+  const normalizedSolution = {};
+  let changed = false;
+
+  primaryItems.forEach((primaryItem) => {
+    const sourceEntry = currentPuzzle.solution[primaryItem];
+    if (!sourceEntry || typeof sourceEntry !== "object") {
+      return;
+    }
+
+    normalizedSolution[primaryItem] = {};
+
+    categoryKeys.slice(1).forEach((categoryKey) => {
+      const label = labels[categoryKey];
+      const sourceValue =
+        sourceEntry[categoryKey] ??
+        sourceEntry[label] ??
+        sourceEntry[labelToKey[categoryKey]];
+
+      if (sourceValue !== undefined) {
+        normalizedSolution[primaryItem][categoryKey] = sourceValue;
+      }
+
+      if (sourceEntry[categoryKey] !== sourceValue) {
+        changed = true;
+      }
+    });
+  });
+
+  if (Object.keys(normalizedSolution).length === primaryItems.length) {
+    currentPuzzle.solution = normalizedSolution;
+    if (changed) {
+      console.warn("Normalized puzzle solution keys to category keys for app compatibility.");
+    }
+  }
+}
+
+function isLevelScreenVisible() {
+  const levelScreen = document.getElementById("level-screen");
+  if (!levelScreen) {
+    return false;
+  }
+
+  const style = window.getComputedStyle(levelScreen);
+  return (
+    !levelScreen.hidden &&
+    !levelScreen.classList.contains("hidden") &&
+    style.display !== "none" &&
+    style.visibility !== "hidden"
+  );
+}
+
+function unlockAllLevelsForTesting() {
+  const completedIds = (allPuzzles || [])
+    .map((puzzle) => puzzle.id)
+    .filter(Boolean);
+
+  localStorage.setItem(progressStorageKey, JSON.stringify(completedIds));
+  location.reload();
+}
+
+function clearLocalDataForTesting() {
+  localStorage.clear();
+  sessionStorage.clear();
+  location.reload();
+}
+
+function ensureDebugUnlockButton() {
+  const levelScreen = document.getElementById("level-screen");
+  if (!levelScreen || !isLevelScreenVisible()) {
+    return;
+  }
+
+  let button = document.getElementById("debug-unlock-all-button");
+  if (!button) {
+    button = document.createElement("button");
+    button.id = "debug-unlock-all-button";
+    button.type = "button";
+    button.className = "debug-unlock-button";
+    button.textContent = "פתח הכל (לבדיקות)";
+    button.title = "כפתור זמני לבדיקות: פתיחת כל השלבים";
+    button.addEventListener("click", unlockAllLevelsForTesting);
+  }
+
+  if (button.parentElement !== levelScreen) {
+    levelScreen.appendChild(button);
+  }
+
+  let clearButton = document.getElementById("debug-clear-storage-button");
+  if (!clearButton) {
+    clearButton = document.createElement("button");
+    clearButton.id = "debug-clear-storage-button";
+    clearButton.type = "button";
+    clearButton.className = "debug-clear-storage-button";
+    clearButton.textContent = "נקה נתונים מקומיים";
+    clearButton.title = "כפתור זמני לבדיקות: ניקוי localStorage";
+    clearButton.addEventListener("click", clearLocalDataForTesting);
+  }
+
+  if (clearButton.parentElement !== levelScreen) {
+    levelScreen.appendChild(clearButton);
+  }
+}
+
 function formatPuzzleTime(totalSeconds) {
   const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0));
   const minutes = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
@@ -2285,6 +2445,7 @@ function updatePuzzleTimerDisplay() {
 }
 
 function startPuzzleTimer() {
+  normalizeCurrentPuzzleSolutionShape();
   clearInterval(activePuzzleTimerInterval);
   activePuzzleTimerId = getCurrentPuzzleTimerId();
   activePuzzleTimerStart = Date.now();
@@ -2461,6 +2622,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("click", () => {
     setTimeout(syncPuzzleTimerWithVisibleScreen, 0);
+    setTimeout(ensureDebugUnlockButton, 0);
+  });
+
+  ensureDebugUnlockButton();
+
+  const debugUnlockButtonObserver = new MutationObserver(ensureDebugUnlockButton);
+  debugUnlockButtonObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class", "style", "hidden"],
+    childList: true,
+    subtree: true
   });
 });
 </script>

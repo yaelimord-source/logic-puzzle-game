@@ -1,0 +1,14 @@
+{
+  "status": "NEEDS_MANUAL_REVIEW",
+  "possibleSolutions": 2,
+  "parserCoverage": 83,
+  "reason": "72.json failed validation: NEEDS_MANUAL_REVIEW, 2 solution(s), 83% parser coverage.",
+  "qualityReview": null,
+  "unsupportedClues": [
+    {
+      "clueNumber": 6,
+      "clue": "הספר בז'אנר ביוגרפיה נקרא בעמדה מספר נמוך יותר מהספר בז'אנר הרפתקאות.",
+      "reason": "Positive equality clue mentions two values from the same category."
+    }
+  ]
+}

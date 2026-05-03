@@ -1,0 +1,8 @@
+{
+  "status": "ERROR",
+  "possibleSolutions": null,
+  "parserCoverage": null,
+  "reason": "Generated puzzle must have exactly 3 categories for the current app, got 4",
+  "qualityReview": null,
+  "unsupportedClues": []
+}

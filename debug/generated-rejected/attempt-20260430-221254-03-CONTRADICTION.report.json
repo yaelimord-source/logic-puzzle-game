@@ -1,0 +1,8 @@
+{
+  "status": "CONTRADICTION",
+  "possibleSolutions": 0,
+  "parserCoverage": 100,
+  "reason": "72.json failed validation: CONTRADICTION, 0 solution(s), 100% parser coverage.",
+  "qualityReview": null,
+  "unsupportedClues": []
+}

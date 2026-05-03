@@ -1,0 +1,8 @@
+{
+  "status": "ERROR",
+  "possibleSolutions": null,
+  "parserCoverage": null,
+  "reason": "Clue 2 uses an order relation, but no single ordered category was detected: העוגה עם קוקוס הייתה מיד אחרי העוגה של דלית בדירוג.",
+  "qualityReview": null,
+  "unsupportedClues": []
+}

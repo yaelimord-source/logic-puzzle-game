@@ -1,499 +1,506 @@
 [
   {
     "file": "1.json",
-    "id": "id1",
+    "id": "1",
     "difficulty": "קל",
     "levelNumber": 1,
     "title": "החברים בבית הקפה"
   },
   {
     "file": "2.json",
-    "id": "id2",
+    "id": "2",
     "difficulty": "קל",
     "levelNumber": 2,
     "title": "הבלגן בפינת החיות"
   },
   {
     "file": "3.json",
-    "id": "science-day-mixup",
+    "id": "3",
     "difficulty": "קל",
     "levelNumber": 3,
     "title": "יום המדע המבולבל"
   },
   {
     "file": "4.json",
-    "id": "city-park-picnic",
+    "id": "4",
     "difficulty": "קל",
     "levelNumber": 4,
     "title": "פיקניק בפארק העירוני"
   },
   {
     "file": "5.json",
-    "id": "night-couriers",
+    "id": "5",
     "difficulty": "קל",
     "levelNumber": 5,
     "title": "שליחים אחרי החשיכה"
   },
   {
     "file": "6.json",
-    "id": "museum-after-hours",
+    "id": "6",
     "difficulty": "קל",
     "levelNumber": 6,
     "title": "המוזיאון אחרי הסגירה"
   },
   {
     "file": "7.json",
-    "id": "beach-competition",
+    "id": "7",
     "difficulty": "קל",
     "levelNumber": 7,
     "title": "תחרות החוף המוזרה"
   },
   {
     "file": "8.json",
-    "id": "easy-cinema-snack-mixup",
+    "id": "8",
     "difficulty": "קל",
     "levelNumber": 8,
     "title": "הבלגן בקולנוע"
   },
   {
     "file": "9.json",
-    "id": "easy-park-kites",
+    "id": "9",
     "difficulty": "קל",
     "levelNumber": 9,
     "title": "עפיפונים בפארק"
   },
   {
     "file": "10.json",
-    "id": "easy-bakery-window",
+    "id": "10",
     "difficulty": "קל",
     "levelNumber": 10,
     "title": "חלון הראווה של המאפייה"
   },
   {
     "file": "11.json",
-    "id": "easy-pet-costume-day",
+    "id": "11",
     "difficulty": "קל",
     "levelNumber": 11,
     "title": "יום התחפושות לחיות"
   },
   {
     "file": "12.json",
-    "id": "easy-mini-market-delivery",
+    "id": "12",
     "difficulty": "קל",
     "levelNumber": 12,
     "title": "משלוח מהמכולת"
   },
   {
     "file": "13.json",
-    "id": "easy-aquarium-tour",
+    "id": "13",
     "difficulty": "קל",
     "levelNumber": 13,
     "title": "סיור באקווריום"
   },
   {
     "file": "14.json",
-    "id": "easy-magic-shop",
+    "id": "14",
     "difficulty": "קל",
     "levelNumber": 14,
     "title": "החנות לקסמים קטנים"
   },
   {
     "file": "15.json",
-    "id": "easy-rooftop-garden",
+    "id": "15",
     "difficulty": "קל",
     "levelNumber": 15,
     "title": "הגינה על הגג"
   },
   {
     "file": "16.json",
-    "id": "easy-school-bus-seats",
+    "id": "16",
     "difficulty": "קל",
     "levelNumber": 16,
     "title": "האוטובוס לטיול השנתי"
   },
   {
     "file": "17.json",
-    "id": "easy-photo-booth",
+    "id": "17",
     "difficulty": "קל",
     "levelNumber": 17,
     "title": "תא הצילום בקניון"
   },
   {
     "file": "18.json",
-    "id": "easy-library-bookmarks",
+    "id": "18",
     "difficulty": "קל",
     "levelNumber": 18,
     "title": "הסימניות בספרייה"
   },
   {
     "file": "19.json",
-    "id": "medium-lost-observatory",
+    "id": "19",
     "difficulty": "בינוני",
     "levelNumber": 1,
     "title": "התצפית שננעלה בטעות"
   },
   {
     "file": "20.json",
-    "id": "medium-theater-rehearsal",
+    "id": "20",
     "difficulty": "בינוני",
     "levelNumber": 2,
     "title": "החזרה שהסתבכה בתיאטרון"
   },
   {
     "file": "21.json",
-    "id": "medium-radio-morning",
+    "id": "21",
     "difficulty": "בינוני",
     "levelNumber": 3,
     "title": "שידור הבוקר המבולבל"
   },
   {
     "file": "22.json",
-    "id": "medium-planetarium-night",
+    "id": "22",
     "difficulty": "בינוני",
-    "levelNumber": 5,
+    "levelNumber": 4,
     "title": "לילה בפלנטריום"
   },
   {
     "file": "23.json",
-    "id": "medium-train-station-kiosk",
+    "id": "23",
     "difficulty": "בינוני",
-    "levelNumber": 6,
+    "levelNumber": 5,
     "title": "הקיוסק בתחנת הרכבת"
   },
   {
     "file": "24.json",
-    "id": "medium-island-ferry",
+    "id": "24",
     "difficulty": "בינוני",
-    "levelNumber": 7,
+    "levelNumber": 6,
     "title": "המעבורת לאי הקטן"
   },
   {
     "file": "25.json",
-    "id": "medium-robot-lab",
+    "id": "25",
     "difficulty": "בינוני",
-    "levelNumber": 8,
+    "levelNumber": 7,
     "title": "מעבדת הרובוטים"
   },
   {
     "file": "26.json",
-    "id": "medium-fashion-pop-up",
+    "id": "26",
     "difficulty": "בינוני",
-    "levelNumber": 9,
+    "levelNumber": 8,
     "title": "פופ-אפ האופנה"
   },
   {
     "file": "27.json",
-    "id": "medium-podcast-studio",
+    "id": "27",
     "difficulty": "בינוני",
-    "levelNumber": 10,
+    "levelNumber": 9,
     "title": "האולפן של הפודקאסט"
   },
   {
     "file": "28.json",
-    "id": "medium-camping-cabins",
+    "id": "28",
     "difficulty": "בינוני",
-    "levelNumber": 11,
+    "levelNumber": 10,
     "title": "הבקתה במחנה"
   },
   {
     "file": "29.json",
-    "id": "medium-music-room",
+    "id": "29",
     "difficulty": "בינוני",
-    "levelNumber": 12,
+    "levelNumber": 11,
     "title": "חדר המוזיקה המבולבל"
   },
   {
     "file": "30.json",
-    "id": "medium-art-supply-swap",
+    "id": "30",
     "difficulty": "בינוני",
-    "levelNumber": 13,
+    "levelNumber": 12,
     "title": "החלפת הציוד בסטודיו"
   },
   {
     "file": "31.json",
-    "id": "medium-city-race",
+    "id": "31",
     "difficulty": "בינוני",
-    "levelNumber": 14,
+    "levelNumber": 13,
     "title": "מרוץ העיר הקטן"
   },
   {
     "file": "32.json",
-    "id": "medium-extra-01",
+    "id": "32",
     "difficulty": "medium",
-    "levelNumber": 101,
+    "levelNumber": 14,
     "title": "תחרות המצאות מיותרות"
   },
   {
     "file": "33.json",
-    "id": "medium-extra-02",
+    "id": "33",
     "difficulty": "medium",
-    "levelNumber": 102,
+    "levelNumber": 15,
     "title": "מסיבת תחפושות במעלית"
   },
   {
     "file": "34.json",
-    "id": "medium-extra-03",
+    "id": "34",
     "difficulty": "medium",
-    "levelNumber": 103,
+    "levelNumber": 16,
     "title": "יום צילום לחיות מחמד"
   },
   {
     "file": "35.json",
-    "id": "medium-extra-04",
+    "id": "35",
     "difficulty": "medium",
-    "levelNumber": 104,
+    "levelNumber": 17,
     "title": "סדנת כתיבה משונה"
   },
   {
     "file": "36.json",
-    "id": "medium-extra-05",
+    "id": "36",
     "difficulty": "medium",
-    "levelNumber": 105,
+    "levelNumber": 18,
     "title": "טעימות גלידה ניסיוניות"
   },
   {
     "file": "37.json",
-    "id": "medium-extra-06",
+    "id": "37",
     "difficulty": "medium",
-    "levelNumber": 106,
+    "levelNumber": 19,
     "title": "החלפת מתנות משרדית"
   },
   {
     "file": "38.json",
-    "id": "medium-extra-07",
+    "id": "38",
     "difficulty": "medium",
-    "levelNumber": 107,
+    "levelNumber": 20,
     "title": "סיור מוזיאון לילי"
   },
   {
     "file": "39.json",
-    "id": "medium-extra-08",
+    "id": "39",
     "difficulty": "medium",
-    "levelNumber": 108,
+    "levelNumber": 21,
     "title": "מרוץ שליחויות שכונתי"
   },
   {
     "file": "40.json",
-    "id": "medium-extra-09",
+    "id": "40",
     "difficulty": "medium",
-    "levelNumber": 109,
+    "levelNumber": 22,
     "title": "ערב קריוקי דרמטי"
   },
   {
     "file": "41.json",
-    "id": "medium-extra-10",
+    "id": "41",
     "difficulty": "medium",
-    "levelNumber": 110,
+    "levelNumber": 23,
     "title": "שוק החלפות בחצר"
   },
   {
     "file": "42.json",
-    "id": "medium-extra-11",
+    "id": "42",
     "difficulty": "medium",
-    "levelNumber": 111,
+    "levelNumber": 24,
     "title": "שיעור ציור בלי מחקים"
   },
   {
     "file": "43.json",
-    "id": "medium-extra-12",
+    "id": "43",
     "difficulty": "medium",
-    "levelNumber": 112,
+    "levelNumber": 25,
     "title": "טעימת רטבים מסתוריים"
   },
   {
     "file": "44.json",
-    "id": "medium-extra-13",
+    "id": "44",
     "difficulty": "medium",
-    "levelNumber": 113,
+    "levelNumber": 26,
     "title": "מועדון ספרים מקוצר"
   },
   {
     "file": "45.json",
-    "id": "medium-extra-14",
+    "id": "45",
     "difficulty": "medium",
-    "levelNumber": 114,
+    "levelNumber": 27,
     "title": "תחרות עציצים עירונית"
   },
   {
     "file": "46.json",
-    "id": "medium-extra-15",
+    "id": "46",
     "difficulty": "medium",
-    "levelNumber": 115,
+    "levelNumber": 28,
     "title": "הזמנות לבית קפה שקט"
   },
   {
     "file": "47.json",
-    "id": "medium-extra-16",
+    "id": "47",
     "difficulty": "medium",
-    "levelNumber": 116,
+    "levelNumber": 29,
     "title": "יום ניקיון במועדון"
   },
   {
     "file": "48.json",
-    "id": "medium-extra-17",
+    "id": "48",
     "difficulty": "medium",
-    "levelNumber": 117,
+    "levelNumber": 30,
     "title": "חידון טריוויה משפחתי"
   },
   {
     "file": "49.json",
-    "id": "medium-extra-18",
+    "id": "49",
     "difficulty": "medium",
-    "levelNumber": 118,
+    "levelNumber": 31,
     "title": "סדנת צילום בטלפון"
   },
   {
     "file": "50.json",
-    "id": "medium-extra-19",
+    "id": "50",
     "difficulty": "medium",
-    "levelNumber": 119,
+    "levelNumber": 32,
     "title": "משחק בריחה ביתי"
   },
   {
     "file": "51.json",
-    "id": "medium-extra-20",
+    "id": "51",
     "difficulty": "medium",
-    "levelNumber": 120,
+    "levelNumber": 33,
     "title": "תחרות כריכים ספונטנית"
   },
   {
     "file": "52.json",
-    "id": "hard-01",
+    "id": "52",
     "difficulty": "hard",
-    "levelNumber": 201,
+    "levelNumber": 1,
     "title": "כנס ממציאי גאדג'טים"
   },
   {
     "file": "53.json",
-    "id": "hard-02",
+    "id": "53",
     "difficulty": "hard",
-    "levelNumber": 202,
+    "levelNumber": 2,
     "title": "פסטיבל מרקי חורף"
   },
   {
     "file": "54.json",
-    "id": "hard-03",
+    "id": "54",
     "difficulty": "hard",
-    "levelNumber": 203,
+    "levelNumber": 3,
     "title": "טורניר משחקי לוח"
   },
   {
     "file": "55.json",
-    "id": "hard-04",
+    "id": "55",
     "difficulty": "hard",
-    "levelNumber": 204,
+    "levelNumber": 4,
     "title": "סדנת פודקאסטים"
   },
   {
     "file": "56.json",
-    "id": "hard-05",
+    "id": "56",
     "difficulty": "hard",
-    "levelNumber": 205,
+    "levelNumber": 5,
     "title": "בית מלון לחפצים אבודים"
   },
   {
     "file": "57.json",
-    "id": "hard-06",
+    "id": "57",
     "difficulty": "hard",
-    "levelNumber": 206,
+    "levelNumber": 6,
     "title": "תחרות עוגיות משרדית"
   },
   {
     "file": "58.json",
-    "id": "hard-07",
+    "id": "58",
     "difficulty": "hard",
-    "levelNumber": 207,
+    "levelNumber": 7,
     "title": "סיור גרפיטי מודרך"
   },
   {
     "file": "59.json",
-    "id": "hard-08",
+    "id": "59",
     "difficulty": "hard",
-    "levelNumber": 208,
+    "levelNumber": 8,
     "title": "ליל מטאורים במדבר"
   },
   {
     "file": "60.json",
-    "id": "hard-09",
+    "id": "60",
     "difficulty": "hard",
-    "levelNumber": 209,
+    "levelNumber": 9,
     "title": "יריד מקצועות עתידיים"
   },
   {
     "file": "61.json",
-    "id": "hard-10",
+    "id": "61",
     "difficulty": "hard",
-    "levelNumber": 210,
+    "levelNumber": 10,
     "title": "מסעדת מנות זעירות"
   },
   {
     "file": "62.json",
-    "id": "hard-11",
+    "id": "62",
     "difficulty": "hard",
-    "levelNumber": 211,
+    "levelNumber": 11,
     "title": "תחנת רדיו ליום אחד"
   },
   {
     "file": "63.json",
-    "id": "hard-12",
+    "id": "63",
     "difficulty": "hard",
-    "levelNumber": 212,
+    "levelNumber": 12,
     "title": "תערוכת מיניאטורות"
   },
   {
     "file": "64.json",
-    "id": "hard-13",
+    "id": "64",
     "difficulty": "hard",
-    "levelNumber": 213,
+    "levelNumber": 13,
     "title": "מרתון סרטים ביתי"
   },
   {
     "file": "65.json",
-    "id": "hard-14",
+    "id": "65",
     "difficulty": "hard",
-    "levelNumber": 214,
+    "levelNumber": 14,
     "title": "קורס קסמים למתחילים"
   },
   {
     "file": "66.json",
-    "id": "hard-15",
+    "id": "66",
     "difficulty": "hard",
-    "levelNumber": 215,
+    "levelNumber": 15,
     "title": "ספארי צילום עירוני"
   },
   {
     "file": "67.json",
-    "id": "hard-16",
+    "id": "67",
     "difficulty": "hard",
-    "levelNumber": 216,
+    "levelNumber": 16,
     "title": "חנות תקליטים נסתרת"
   },
   {
     "file": "68.json",
-    "id": "hard-17",
+    "id": "68",
     "difficulty": "hard",
-    "levelNumber": 217,
+    "levelNumber": 17,
     "title": "מעבדת בשמים ביתית"
   },
   {
     "file": "69.json",
-    "id": "hard-18",
+    "id": "69",
     "difficulty": "hard",
-    "levelNumber": 218,
+    "levelNumber": 18,
     "title": "ליגת רובוטים קטנים"
   },
   {
     "file": "70.json",
-    "id": "hard-19",
+    "id": "70",
     "difficulty": "hard",
-    "levelNumber": 219,
+    "levelNumber": 19,
     "title": "תחרות נאומים קצרים"
   },
   {
     "file": "71.json",
-    "id": "hard-20",
+    "id": "71",
     "difficulty": "hard",
-    "levelNumber": 220,
+    "levelNumber": 20,
     "title": "משלוחי פרחים מבלבלים"
+  },
+  {
+    "file": "72.json",
+    "id": "72",
+    "difficulty": "בינוני",
+    "levelNumber": 34,
+    "title": "בביקור בספרייה הדיגיטלית"
   }
 ]

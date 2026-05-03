@@ -1,0 +1,14 @@
+{
+  "status": "ERROR",
+  "possibleSolutions": null,
+  "parserCoverage": null,
+  "reason": "Quality gate rejected puzzle: Clue 1 states שהציור בנושא 'טבע' צויר בשעה מוקדמת יותר מהציור של אמיר, but in the solution Amir painted 'טבע', so this clue contradicts the solution.; Due to this contradiction, the puzzle has at least one clue inconsistent with the solution.",
+  "qualityReview": {
+    "approved": false,
+    "reasons": [
+      "Clue 1 states שהציור בנושא 'טבע' צויר בשעה מוקדמת יותר מהציור של אמיר, but in the solution Amir painted 'טבע', so this clue contradicts the solution.",
+      "Due to this contradiction, the puzzle has at least one clue inconsistent with the solution."
+    ]
+  },
+  "unsupportedClues": []
+}

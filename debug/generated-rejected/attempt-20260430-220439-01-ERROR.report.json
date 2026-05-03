@@ -1,0 +1,8 @@
+{
+  "status": "ERROR",
+  "possibleSolutions": null,
+  "parserCoverage": null,
+  "reason": "False clue 7: \"ולדי צייר שעה אחרי זה שקיבל את הציור עם התפוחים.\" (ולדי maps to 10:00, תפוחים maps to 10:00; relation after is false).",
+  "qualityReview": null,
+  "unsupportedClues": []
+}
