@@ -1,0 +1,8 @@
+{
+  "status": "ERROR",
+  "possibleSolutions": null,
+  "parserCoverage": null,
+  "reason": "Missing OPENAI_API_KEY. Set it before running generation.",
+  "qualityReview": null,
+  "unsupportedClues": []
+}

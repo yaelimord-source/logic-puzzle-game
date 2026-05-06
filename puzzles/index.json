@@ -502,5 +502,12 @@
     "difficulty": "בינוני",
     "levelNumber": 34,
     "title": "בביקור בספרייה הדיגיטלית"
+  },
+  {
+    "file": "73.json",
+    "id": "73",
+    "difficulty": "בינוני",
+    "levelNumber": 35,
+    "title": "כנס המדענים"
   }
 ]

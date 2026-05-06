@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { execFile } = require("child_process");
 
 const { validatePuzzle } = require("./validate-puzzles");
 
@@ -12,7 +13,6 @@ const rejectedDir = path.join(projectRoot, "debug", "generated-rejected");
 const defaultDifficulty = process.env.PUZZLE_DIFFICULTY || "בינוני";
 const maxRetries = Number(process.env.PUZZLE_GENERATION_RETRIES || 10);
 const minParserCoverage = Number(process.env.PUZZLE_MIN_PARSER_COVERAGE || 90);
-const model = process.env.OPENAI_MODEL || "gpt-4.1";
 const validDifficulties = ["קל", "בינוני", "קשה", "קשה מאוד"];
 const difficultyMap = {
   easy: "קל",
@@ -533,83 +533,39 @@ function extractJsonObject(text) {
   throw new Error("Model response did not contain a JSON object.");
 }
 
-async function callOpenAI(prompt) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("Missing OPENAI_API_KEY. Set it before running generation.");
-  }
-
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model,
-      input: prompt,
-      text: {
-        format: {
-          type: "json_object"
+function callClaude(prompt) {
+  return new Promise((resolve, reject) => {
+    const proc = execFile(
+      "claude",
+      ["--print", "--dangerously-skip-permissions"],
+      { maxBuffer: 10 * 1024 * 1024 },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`claude process failed: ${error.message}\n${stderr}`));
+          return;
         }
+        resolve(stdout);
       }
-    })
+    );
+    proc.stdin.write(prompt, "utf8");
+    proc.stdin.end();
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI request failed: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  const outputText =
-    data.output_text ||
-    data.output
-      ?.flatMap((item) => item.content || [])
-      .map((content) => content.text || "")
-      .join("");
-
-  if (!outputText) {
-    throw new Error("OpenAI response did not include text output.");
-  }
-
-  return JSON.parse(extractJsonObject(outputText));
 }
 
-async function callOpenAIText(prompt) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("Missing OPENAI_API_KEY. Set it before running generation.");
+async function callClaudeJson(prompt) {
+  const text = await callClaude(prompt);
+  if (!text.trim()) {
+    throw new Error("claude returned empty output.");
   }
+  return JSON.parse(extractJsonObject(text));
+}
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model,
-      input: prompt
-    })
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI request failed: ${response.status} ${errorText}`);
+async function callClaudeText(prompt) {
+  const text = await callClaude(prompt);
+  if (!text.trim()) {
+    throw new Error("claude returned empty output.");
   }
-
-  const data = await response.json();
-  const outputText =
-    data.output_text ||
-    data.output
-      ?.flatMap((item) => item.content || [])
-      .map((content) => content.text || "")
-      .join("");
-
-  if (!outputText) {
-    throw new Error("OpenAI response did not include text output.");
-  }
-
-  return outputText;
+  return text;
 }
 
 function buildPrompt(spec, difficulty, levelNumber) {
@@ -669,7 +625,7 @@ function buildQualityGatePrompt(spec, puzzle) {
 }
 
 async function runQualityGate(spec, puzzle) {
-  const rawReview = await callOpenAIText(buildQualityGatePrompt(spec, puzzle));
+  const rawReview = await callClaudeText(buildQualityGatePrompt(spec, puzzle));
   const review = JSON.parse(extractJsonObject(rawReview));
 
   if (!review.approved) {
@@ -738,7 +694,7 @@ async function generateOnePuzzle({ spec, indexEntries, difficulty }) {
     let puzzle = null;
 
     try {
-      puzzle = await callOpenAI(buildPrompt(spec, difficulty, levelNumber));
+      puzzle = await callClaudeJson(buildPrompt(spec, difficulty, levelNumber));
       puzzle.id = id;
       puzzle.difficulty = difficulty;
       puzzle.levelNumber = levelNumber;

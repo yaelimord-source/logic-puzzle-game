@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/validate-puzzles.js --problems-only)",
+      "Bash(node scripts/validate-puzzles.js)"
+    ]
+  }
+}

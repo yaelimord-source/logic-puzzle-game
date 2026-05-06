@@ -636,13 +636,20 @@ function parseNegativeClue(clue, mentions, index) {
     return unsupported(clue, "Could not safely identify the negated value(s).");
   }
 
+  const negTermCount = countNegationTerms(clue);
+  const partialReason =
+    targets.length < negTermCount
+      ? `Negation chain: expected ~${negTermCount} negated value(s), extracted ${targets.length}.`
+      : null;
+
   return parsed(
     clue,
     targets.map((target) => ({
       type: "notEquals",
       left: subject,
       right: target
-    }))
+    })),
+    partialReason
   );
 }
 
@@ -747,11 +754,12 @@ function parsePositiveClue(clue, mentions, index) {
   );
 }
 
-function parsed(clue, constraints) {
+function parsed(clue, constraints, partialReason = null) {
   return {
     clue,
     constraints,
-    unsupportedReason: null
+    unsupportedReason: null,
+    partialReason
   };
 }
 
@@ -759,8 +767,91 @@ function unsupported(clue, reason) {
   return {
     clue,
     constraints: [],
-    unsupportedReason: reason
+    unsupportedReason: reason,
+    partialReason: null
   };
+}
+
+function countNegationTerms(clue) {
+  const negTokens = new Set(["לא", "ולא", "אינו", "אינה", "אינם", "אינן"]);
+  return normalizeText(clue)
+    .split(/\s+/)
+    .filter((token) => negTokens.has(token)).length;
+}
+
+function isMiShePattern(clue) {
+  return /(?:^|\s)מי\s+ש/.test(normalizeText(clue));
+}
+
+function parseMiSheClue(clue, mentions, index) {
+  const normalized = normalizeText(clue);
+
+  // Split at the first negation keyword to separate the subject clause from the predicate.
+  // Pattern: "[מי ש...subject value...] [negation] [predicate values...]"
+  const negSplit = normalized.match(/^(.*?)\s+(לא|ולא|אינו|אינה|אינם|אינן)\s+(.+)$/);
+
+  if (negSplit) {
+    const subjectPart = negSplit[1];
+    const predicatePart = negSplit[3];
+
+    const subjectMentions = findMentionedValues(subjectPart, index);
+    const predicateMentions = findMentionedValues(predicatePart, index);
+
+    if (subjectMentions.length === 0) {
+      return parseNegativeClue(clue, mentions, index);
+    }
+
+    // Use the last mention in the subject clause as the subject value
+    // (the value typically follows the verb: "מי שלבש כחול" → כחול)
+    const subject = subjectMentions[subjectMentions.length - 1];
+    const targets = predicateMentions.filter((m) => m.categoryKey !== subject.categoryKey);
+
+    if (targets.length === 0) {
+      return unsupported(
+        clue,
+        "מי ש clue: predicate does not mention a value from a different category than the subject."
+      );
+    }
+
+    // Detect partial extraction: count negation terms in the predicate
+    // plus 1 for the negation keyword we split on
+    const predicateNegCount = countNegationTerms(predicatePart);
+    const expectedTargets = predicateNegCount + 1;
+    const partialReason =
+      targets.length < expectedTargets
+        ? `מי ש clue: expected ${expectedTargets} negated value(s), extracted ${targets.length}.`
+        : null;
+
+    return parsed(
+      clue,
+      targets.map((target) => ({ type: "notEquals", left: subject, right: target })),
+      partialReason
+    );
+  }
+
+  // Positive "מי ש" clue (no negation detected)
+  if (mentions.length < 2) {
+    return unsupported(clue, "מי ש positive clue: fewer than two known values identified.");
+  }
+
+  if (mentions.length === 2 && mentions[0].categoryKey !== mentions[1].categoryKey) {
+    return parsed(clue, [{ type: "equals", left: mentions[0], right: mentions[1] }]);
+  }
+
+  const subject = mentions[0];
+  const targets = mentions.slice(1).filter((m) => m.categoryKey !== subject.categoryKey);
+
+  if (targets.length === 0) {
+    return unsupported(
+      clue,
+      "מי ש positive clue: all mentioned values are from the same category as the subject."
+    );
+  }
+
+  return parsed(
+    clue,
+    targets.map((target) => ({ type: "equals", left: subject, right: target }))
+  );
 }
 
 function parseClue(clue, index) {
@@ -775,51 +866,72 @@ function parseClue(clue, index) {
     return parseOrderClue(clue, mentions, index, orderRelation);
   }
 
+  // Route "מי ש..." patterns to a dedicated handler that treats the value inside
+  // the "מי ש" clause as the constraint subject rather than requiring a primary-
+  // category entity to be named explicitly.
+  if (isMiShePattern(clue)) {
+    return parseMiSheClue(clue, mentions, index);
+  }
+
   if (hasNegativeLanguage(clue)) {
     const mixedParts = splitMixedPositiveNegativeClue(clue);
 
     if (mixedParts) {
       const positiveMentions = findMentionedValues(mixedParts.positivePart, index);
       const negativeMentions = findMentionedValues(mixedParts.negativePart, index);
+
+      // Only look for a subject inside the positive (pre-negation) part of the clue.
+      // Falling back to the full mentions list would pick primary-category values
+      // that appear in the negative part, producing a wrong subject and incorrect
+      // constraint direction (e.g. "כחול לא שייך לדור" would make דור the subject).
       const subject =
         positiveMentions.find((mention) => mention.categoryKey === index.primaryKey) ||
-        mentions.find((mention) => mention.categoryKey === index.primaryKey) ||
-        mentions[0];
+        positiveMentions[0];
+
+      // If the positive part contains no recognised subject, defer entirely to
+      // parseNegativeClue which uses position-based subject selection.
+      if (!subject) {
+        return parseNegativeClue(clue, mentions, index);
+      }
+
+      const positiveTargets = positiveMentions.filter(
+        (mention) =>
+          mention.categoryKey !== subject.categoryKey ||
+          mention.item !== subject.item
+      );
+      const negativeTargets = negativeMentions.filter(
+        (mention) =>
+          mention.categoryKey !== subject.categoryKey &&
+          mention.item !== subject.item
+      );
       const constraints = [];
 
-      if (subject) {
-        const positiveTargets = positiveMentions.filter(
-          (mention) =>
-            mention.categoryKey !== subject.categoryKey ||
-            mention.item !== subject.item
-        );
-        const negativeTargets = negativeMentions.filter(
-          (mention) =>
-            mention.categoryKey !== subject.categoryKey &&
-            mention.item !== subject.item
-        );
-
-        for (const target of positiveTargets) {
-          if (target.categoryKey !== subject.categoryKey) {
-            constraints.push({
-              type: "equals",
-              left: subject,
-              right: target
-            });
-          }
-        }
-
-        for (const target of negativeTargets) {
+      for (const target of positiveTargets) {
+        if (target.categoryKey !== subject.categoryKey) {
           constraints.push({
-            type: "notEquals",
+            type: "equals",
             left: subject,
             right: target
           });
         }
       }
 
+      for (const target of negativeTargets) {
+        constraints.push({
+          type: "notEquals",
+          left: subject,
+          right: target
+        });
+      }
+
       if (constraints.length > 0) {
-        return parsed(clue, constraints);
+        const negTermCount = countNegationTerms(clue);
+        const notEqualsCount = constraints.filter((c) => c.type === "notEquals").length;
+        const partialReason =
+          notEqualsCount > 0 && notEqualsCount < negTermCount
+            ? `Mixed clue: expected ~${negTermCount} negation(s), extracted ${notEqualsCount} notEquals constraint(s).`
+            : null;
+        return parsed(clue, constraints, partialReason);
       }
     }
 
@@ -976,11 +1088,18 @@ function countSolutions(puzzle, constraints, index) {
   return { count, samples };
 }
 
-function getSolutionStatus(solutionCount, hasUnsupported) {
+function getSolutionStatus(solutionCount, hasUnsupported, hasPartial) {
   if (hasUnsupported) {
     return {
       status: "NEEDS_MANUAL_REVIEW",
       reason: "unsupported clues exist, result may be unreliable"
+    };
+  }
+
+  if (hasPartial) {
+    return {
+      status: "NEEDS_MANUAL_REVIEW",
+      reason: "partially parsed clues exist, some constraints may be missing"
     };
   }
 
@@ -1006,7 +1125,9 @@ function getSolutionStatus(solutionCount, hasUnsupported) {
 
 function getSeverity(result) {
   const hasFullCoverage =
-    result.parserSummary?.coverage === 100 && result.parserSummary?.unsupported === 0;
+    result.parserSummary?.coverage === 100 &&
+    result.parserSummary?.unsupported === 0 &&
+    result.parserSummary?.partial === 0;
 
   if (result.status === "VALID" && hasFullCoverage && result.possibleSolutions === 1) {
     return "OK";
@@ -1073,7 +1194,9 @@ function validatePuzzle(fileName, puzzle) {
     clueIndex,
     ...parseClue(clue, index)
   }));
-  const unsupported = parsedClues.filter((clue) => clue.unsupportedReason);
+  const unsupportedClues = parsedClues.filter((clue) => clue.unsupportedReason);
+  // Partially parsed: the parser extracted some constraints but detected it may have missed others.
+  const partialClues = parsedClues.filter((clue) => !clue.unsupportedReason && clue.partialReason);
   const constraints = parsedClues.flatMap((clue) =>
     clue.constraints.map((constraint) => ({
       ...constraint,
@@ -1081,10 +1204,14 @@ function validatePuzzle(fileName, puzzle) {
     }))
   );
   const solutionResult = countSolutions(puzzle, constraints, index);
-  const status = getSolutionStatus(solutionResult.count, unsupported.length > 0);
+  const status = getSolutionStatus(
+    solutionResult.count,
+    unsupportedClues.length > 0,
+    partialClues.length > 0
+  );
   const redundantClues = [];
 
-  if (unsupported.length === 0 && solutionResult.count === 1) {
+  if (unsupportedClues.length === 0 && partialClues.length === 0 && solutionResult.count === 1) {
     const individuallyRedundantClues = [];
 
     for (const parsedClue of parsedClues) {
@@ -1130,10 +1257,15 @@ function validatePuzzle(fileName, puzzle) {
     samples: solutionResult.samples,
     parserSummary: {
       total: parsedClues.length,
-      parsed: parsedClues.length - unsupported.length,
-      unsupported: unsupported.length,
+      parsed: parsedClues.length - unsupportedClues.length - partialClues.length,
+      partial: partialClues.length,
+      unsupported: unsupportedClues.length,
       coverage: parsedClues.length
-        ? Math.round(((parsedClues.length - unsupported.length) / parsedClues.length) * 100)
+        ? Math.round(
+            ((parsedClues.length - unsupportedClues.length - partialClues.length) /
+              parsedClues.length) *
+              100
+          )
         : 100
     },
     severity: null
@@ -1172,6 +1304,36 @@ function assertGeneralParserSample(name, puzzle, clue, expectedType, expectedIte
       `${name}: expected ${expectedType} ${wantedItems.join(" / ")}, got ${constraint.type} ${actualItems.join(" / ")}`
     );
   }
+}
+
+function assertMultiConstraintSample(name, puzzle, clue, expectedConstraints) {
+  const index = buildCategoryIndex(puzzle);
+  const result = parseClue(clue, index);
+
+  if (result.unsupportedReason) {
+    throw new Error(`${name}: expected parsed clue, got unsupported: ${result.unsupportedReason}`);
+  }
+
+  if (result.constraints.length !== expectedConstraints.length) {
+    throw new Error(
+      `${name}: expected ${expectedConstraints.length} constraint(s), got ${result.constraints.length}`
+    );
+  }
+
+  expectedConstraints.forEach(({ type, items }, constraintIndex) => {
+    const constraint = result.constraints[constraintIndex];
+    const actualItems = [constraint.left.item, constraint.right.item].sort();
+    const wantedItems = [...items].sort();
+
+    if (
+      constraint.type !== type ||
+      actualItems.some((item, i) => item !== wantedItems[i])
+    ) {
+      throw new Error(
+        `${name} constraint ${constraintIndex + 1}: expected ${type} ${wantedItems.join(" / ")}, got ${constraint.type} ${actualItems.join(" / ")}`
+      );
+    }
+  });
 }
 
 function runGeneralParserSelfChecks() {
@@ -1266,6 +1428,36 @@ function runGeneralParserSelfChecks() {
       clue: "קופצני הופיע יחד עם עוקב אחרי קו.",
       type: "equals",
       items: ["קופצני", "עוקב אחרי קו"]
+    },
+    // "מי ש..." negative pattern: subject is the value in the מי ש clause.
+    // Verbs are chosen to avoid prefix-stripping into category values
+    // (e.g. "שתה" strips ש → "תה", which matches the "tea" value — so we use "קיבל" instead).
+    {
+      name: "mi-she-negative",
+      puzzle: {
+        categories: {
+          people: ["דנה", "יואב"],
+          drinks: ["שוקו", "מיץ"],
+          colors: ["כחול", "אדום"]
+        }
+      },
+      clue: "מי שלבש כחול לא קיבל שוקו.",
+      type: "notEquals",
+      items: ["כחול", "שוקו"]
+    },
+    // "מי ש..." positive pattern
+    {
+      name: "mi-she-positive",
+      puzzle: {
+        categories: {
+          people: ["דנה", "יואב"],
+          drinks: ["שוקו", "מיץ"],
+          colors: ["כחול", "אדום"]
+        }
+      },
+      clue: "מי שלבש כחול קיבל שוקו.",
+      type: "equals",
+      items: ["כחול", "שוקו"]
     }
   ];
 
@@ -1276,6 +1468,49 @@ function runGeneralParserSelfChecks() {
       sample.clue,
       sample.type,
       sample.items
+    );
+  });
+
+  // Multi-constraint checks — negation chains that must produce exactly N constraints
+  const multiSamples = [
+    {
+      name: "negation-chain-two",
+      puzzle: {
+        categories: {
+          people: ["דור", "דנה", "רון"],
+          colors: ["כחול", "צהוב", "אדום"],
+          drinks: ["קפה", "תה", "מיץ"]
+        }
+      },
+      clue: "דור לא לבש כחול ולא צהוב.",
+      constraints: [
+        { type: "notEquals", items: ["דור", "כחול"] },
+        { type: "notEquals", items: ["דור", "צהוב"] }
+      ]
+    },
+    {
+      name: "non-primary-subject-negation-chain",
+      puzzle: {
+        categories: {
+          people: ["דור", "דנה", "רון"],
+          colors: ["כחול", "אדום", "ירוק"],
+          drinks: ["קפה", "תה", "מיץ"]
+        }
+      },
+      clue: "כחול לא שייך לדור ולא לדנה.",
+      constraints: [
+        { type: "notEquals", items: ["כחול", "דור"] },
+        { type: "notEquals", items: ["כחול", "דנה"] }
+      ]
+    }
+  ];
+
+  multiSamples.forEach((sample) => {
+    assertMultiConstraintSample(
+      sample.name,
+      sample.puzzle,
+      sample.clue,
+      sample.constraints
     );
   });
 }
@@ -1298,6 +1533,11 @@ function printParsedClues(result) {
       console.log("  Parsed: unsupported");
       console.log(`  Reason: ${parsedClue.unsupportedReason}`);
       return;
+    }
+
+    if (parsedClue.partialReason) {
+      console.log("  Parsed: partial");
+      console.log(`  Warning: ${parsedClue.partialReason}`);
     }
 
     parsedClue.constraints.forEach((constraint) => {
@@ -1330,9 +1570,15 @@ function printReport(results, options) {
     } else {
       console.log(`Possible solutions: ${result.possibleSolutions}`);
     }
-    console.log(
-      `Parser coverage: ${result.parserSummary.parsed}/${result.parserSummary.total} clues parsed (${result.parserSummary.coverage}%)`
-    );
+    const { parsed: nParsed, partial: nPartial, unsupported: nUnsupported, total: nTotal, coverage } = result.parserSummary;
+    const coverageParts = [`${nParsed}/${nTotal} fully parsed (${coverage}%)`];
+    if (nPartial > 0) {
+      coverageParts.push(`${nPartial} partial`);
+    }
+    if (nUnsupported > 0) {
+      coverageParts.push(`${nUnsupported} unsupported`);
+    }
+    console.log(`Parser coverage: ${coverageParts.join(", ")}`);
 
     if (result.reason) {
       console.log(`Reason: ${result.reason}`);
@@ -1342,18 +1588,26 @@ function printReport(results, options) {
 
     if (result.status === "NEEDS_MANUAL_REVIEW") {
       console.log("Manual review checklist:");
-      console.log("- Warning: Validation is incomplete because not all clues were parsed");
-      console.log("- Unsupported clues:");
-      const unsupportedClues = result.parsedClues.filter(
-        (clue) => clue.unsupportedReason
-      );
-      unsupportedClues.forEach((clue) => {
-        console.log(`  - clue ${clue.clueIndex + 1}: ${clue.clue}`);
-        console.log(`    Reason: ${clue.unsupportedReason}`);
-      });
-      console.log("- Parsed clues:");
+      console.log("- Warning: Validation is incomplete because not all clues were fully parsed");
+      const unsupportedClues = result.parsedClues.filter((clue) => clue.unsupportedReason);
+      const partialCluesToList = result.parsedClues.filter((clue) => !clue.unsupportedReason && clue.partialReason);
+      if (unsupportedClues.length > 0) {
+        console.log("- Unsupported clues:");
+        unsupportedClues.forEach((clue) => {
+          console.log(`  - clue ${clue.clueIndex + 1}: ${clue.clue}`);
+          console.log(`    Reason: ${clue.unsupportedReason}`);
+        });
+      }
+      if (partialCluesToList.length > 0) {
+        console.log("- Partially parsed clues:");
+        partialCluesToList.forEach((clue) => {
+          console.log(`  - clue ${clue.clueIndex + 1}: ${clue.clue}`);
+          console.log(`    Warning: ${clue.partialReason}`);
+        });
+      }
+      console.log("- Fully parsed clues:");
       result.parsedClues
-        .filter((clue) => !clue.unsupportedReason)
+        .filter((clue) => !clue.unsupportedReason && !clue.partialReason)
         .forEach((clue) => {
           console.log(`  - clue ${clue.clueIndex + 1}: ${clue.clue}`);
         });
