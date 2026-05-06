@@ -551,5 +551,61 @@
     "difficulty": "קל",
     "levelNumber": 24,
     "title": "תחנת הרכבת"
+  },
+  {
+    "file": "80.json",
+    "id": "80",
+    "difficulty": "קל",
+    "levelNumber": 25,
+    "title": "מכבסת הערב"
+  },
+  {
+    "file": "81.json",
+    "id": "81",
+    "difficulty": "קל",
+    "levelNumber": 26,
+    "title": "סדנת נרות"
+  },
+  {
+    "file": "82.json",
+    "id": "82",
+    "difficulty": "קל",
+    "levelNumber": 27,
+    "title": "מדף ההפתעות"
+  },
+  {
+    "file": "83.json",
+    "id": "83",
+    "difficulty": "קל",
+    "levelNumber": 28,
+    "title": "ההרשמה לחוג שחייה"
+  },
+  {
+    "file": "84.json",
+    "id": "84",
+    "difficulty": "קל",
+    "levelNumber": 29,
+    "title": "תחנת תיקון אופניים"
+  },
+  {
+    "file": "85.json",
+    "id": "85",
+    "difficulty": "קל",
+    "levelNumber": 30,
+    "title": "קופסת הפתקים במסיבה"
+  },
+  {
+    "file": "86.json",
+    "id": "86",
+    "difficulty": "קל",
+    "levelNumber": 31,
+    "title": "טעימות קפה"
+  },
+  {
+    "file": "87.json",
+    "id": "87",
+    "difficulty": "קל",
+    "levelNumber": 32,
+    "title": "חדר התחפושות"
   }
 ]
