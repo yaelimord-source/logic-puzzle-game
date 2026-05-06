@@ -45,8 +45,8 @@ function normalizeDifficulty(difficulty) {
 
 function normalizeText(value) {
   return String(value)
-    .replace(/[\u0591-\u05C7]/g, "")
     .replace(/[־-]/g, " ")
+    .replace(/[\u0591-\u05BD\u05BF-\u05C7]/g, "")
     .replace(/[.,!?;:"'״׳()[\]{}]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -478,17 +478,61 @@ function findMentionedValues(clue, index) {
   return selected.sort((a, b) => a.position - b.position);
 }
 
+function mentionForValue(index, categoryKey, item, matchedText = item) {
+  const value = index.values.find(
+    (candidate) => candidate.categoryKey === categoryKey && candidate.item === item
+  );
+
+  return {
+    categoryKey,
+    item,
+    position: -1,
+    end: -1,
+    matchedText,
+    matchedForm: value?.forms?.[0] || item
+  };
+}
+
+function selectSingleReliableOrderedCategory(index, mentionedCategoryKeys = []) {
+  const reliableOrderedKeys = Object.keys(index.orderedCategories)
+    .filter((key) => index.orderedCategories[key].isReliableOrder)
+    .sort(
+      (a, b) =>
+        index.orderedCategories[a].priority - index.orderedCategories[b].priority
+    );
+  const mentionedReliableKeys = reliableOrderedKeys.filter((key) =>
+    mentionedCategoryKeys.includes(key)
+  );
+  const topPriority = reliableOrderedKeys.length
+    ? index.orderedCategories[reliableOrderedKeys[0]].priority
+    : null;
+  const topPriorityKeys = reliableOrderedKeys.filter(
+    (key) => index.orderedCategories[key].priority === topPriority
+  );
+  const selectedKeys =
+    reliableOrderedKeys.length === 1
+      ? reliableOrderedKeys
+      : mentionedReliableKeys.length === 1
+        ? mentionedReliableKeys
+        : topPriorityKeys.length === 1
+          ? topPriorityKeys
+          : [];
+
+  return selectedKeys.length === 1 ? selectedKeys[0] : null;
+}
+
 function hasNegativeLanguage(clue) {
   const words = normalizeText(clue).split(" ");
   return (
     words.includes("לא") ||
+    words.includes("שלא") ||
     words.some((word) => ["אינו", "אינה", "אינם", "אינן"].includes(word))
   );
 }
 
 function findFirstNegativePosition(clue) {
   const normalized = ` ${normalizeText(clue)} `;
-  const candidates = [" לא ", " אינו ", " אינה ", " אינם ", " אינן "]
+  const candidates = [" לא ", " שלא ", " אינו ", " אינה ", " אינם ", " אינן "]
     .map((word) => normalized.indexOf(word))
     .filter((position) => position >= 0);
 
@@ -497,7 +541,7 @@ function findFirstNegativePosition(clue) {
 
 function splitNegativeSegments(clue) {
   return normalizeText(clue)
-    .split(/\s+ולא\s+|\s+לא\s+|\s+אינו\s+|\s+אינה\s+|\s+אינם\s+|\s+אינן\s+/)
+    .split(/\s+ולא\s+|\s+שלא\s+|\s+לא\s+|\s+אינו\s+|\s+אינה\s+|\s+אינם\s+|\s+אינן\s+/)
     .map((segment) => segment.trim())
     .filter(Boolean)
     .slice(1);
@@ -505,7 +549,7 @@ function splitNegativeSegments(clue) {
 
 function splitMixedPositiveNegativeClue(clue) {
   const normalized = normalizeText(clue);
-  const match = normalized.match(/\s+(ולא|לא|אינו|אינה|אינם|אינן)\s+/);
+  const match = normalized.match(/\s+(ולא|שלא|לא|אינו|אינה|אינם|אינן)\s+/);
 
   if (!match || match.index <= 0) {
     return null;
@@ -653,33 +697,64 @@ function parseNegativeClue(clue, mentions, index) {
   );
 }
 
-function parseOrderClue(clue, mentions, index, relation) {
-  const reliableOrderedKeys = Object.keys(index.orderedCategories)
-    .filter((key) => index.orderedCategories[key].isReliableOrder)
-    .sort(
-      (a, b) =>
-        index.orderedCategories[a].priority - index.orderedCategories[b].priority
-    );
-  const mentionedCategoryKeys = unique(mentions.map((mention) => mention.categoryKey));
-  const mentionedReliableKeys = reliableOrderedKeys.filter((key) =>
-    mentionedCategoryKeys.includes(key)
-  );
-  const topPriority = reliableOrderedKeys.length
-    ? index.orderedCategories[reliableOrderedKeys[0]].priority
-    : null;
-  const topPriorityKeys = reliableOrderedKeys.filter(
-    (key) => index.orderedCategories[key].priority === topPriority
-  );
-  const selectedKeys =
-    reliableOrderedKeys.length === 1
-      ? reliableOrderedKeys
-      : mentionedReliableKeys.length === 1
-        ? mentionedReliableKeys
-        : topPriorityKeys.length === 1
-          ? topPriorityKeys
-          : [];
+function parseNegativeOrdinalClue(clue, mentions, index) {
+  if (!hasNegativeLanguage(clue)) {
+    return null;
+  }
 
-  if (selectedKeys.length !== 1) {
+  if (mentions.length !== 1) {
+    return null;
+  }
+
+  const normalized = normalizeText(clue);
+  const ordinalMatch = normalized.match(/(?:^|\s)(ראשון|ראשונה|אחרון|אחרונה)(?=\s|$)/);
+
+  if (!ordinalMatch) {
+    return null;
+  }
+
+  const subject = chooseNegativeSubject(mentions, index.primaryKey, clue);
+  if (!subject) {
+    return unsupported(clue, "Ordinal clue detected, but no subject was identified.");
+  }
+
+  const orderedCategoryKey = selectSingleReliableOrderedCategory(
+    index,
+    unique(mentions.map((mention) => mention.categoryKey))
+  );
+
+  if (!orderedCategoryKey) {
+    return unsupported(
+      clue,
+      "Ordinal clue detected, but no single reliable ordered category could be chosen safely."
+    );
+  }
+
+  const order = index.orderedCategories[orderedCategoryKey]?.order || [];
+  const ordinalWord = ordinalMatch[1];
+  const ordinalValue = ordinalWord.startsWith("ראש") ? order[0] : order[order.length - 1];
+
+  if (!ordinalValue) {
+    return unsupported(
+      clue,
+      "Ordinal clue detected, but the selected ordered category has no values."
+    );
+  }
+
+  return parsed(clue, [
+    {
+      type: "notEquals",
+      left: subject,
+      right: mentionForValue(index, orderedCategoryKey, ordinalValue, ordinalWord)
+    }
+  ]);
+}
+
+function parseOrderClue(clue, mentions, index, relation) {
+  const mentionedCategoryKeys = unique(mentions.map((mention) => mention.categoryKey));
+  const selectedKey = selectSingleReliableOrderedCategory(index, mentionedCategoryKeys);
+
+  if (!selectedKey) {
     return unsupported(
       clue,
       "Order clue detected, but no single reliable ordered category could be chosen safely."
@@ -696,7 +771,7 @@ function parseOrderClue(clue, mentions, index, relation) {
   return parsed(clue, [
     {
       type: relation,
-      orderedCategoryKey: selectedKeys[0],
+      orderedCategoryKey: selectedKey,
       left: mentions[0],
       right: mentions[1]
     }
@@ -773,7 +848,7 @@ function unsupported(clue, reason) {
 }
 
 function countNegationTerms(clue) {
-  const negTokens = new Set(["לא", "ולא", "אינו", "אינה", "אינם", "אינן"]);
+  const negTokens = new Set(["לא", "ולא", "שלא", "אינו", "אינה", "אינם", "אינן"]);
   return normalizeText(clue)
     .split(/\s+/)
     .filter((token) => negTokens.has(token)).length;
@@ -788,7 +863,7 @@ function parseMiSheClue(clue, mentions, index) {
 
   // Split at the first negation keyword to separate the subject clause from the predicate.
   // Pattern: "[מי ש...subject value...] [negation] [predicate values...]"
-  const negSplit = normalized.match(/^(.*?)\s+(לא|ולא|אינו|אינה|אינם|אינן)\s+(.+)$/);
+  const negSplit = normalized.match(/^(.*?)\s+(לא|ולא|שלא|אינו|אינה|אינם|אינן)\s+(.+)$/);
 
   if (negSplit) {
     const subjectPart = negSplit[1];
@@ -857,6 +932,11 @@ function parseMiSheClue(clue, mentions, index) {
 function parseClue(clue, index) {
   const mentions = findMentionedValues(clue, index);
   const orderRelation = detectOrderRelation(clue, mentions);
+  const negativeOrdinal = parseNegativeOrdinalClue(clue, mentions, index);
+
+  if (negativeOrdinal) {
+    return negativeOrdinal;
+  }
 
   if (mentions.length < 2) {
     return unsupported(clue, "Could not identify at least two known category values.");
@@ -1391,6 +1471,71 @@ function runGeneralParserSelfChecks() {
       items: ["חלב", "09:00"]
     },
     {
+      name: "person-arrived-maqaf-time",
+      puzzle: {
+        categories: {
+          people: ["נועה", "גיל"],
+          time: ["18:00", "18:15"],
+          item: ["מזרן", "בקבוק"]
+        }
+      },
+      clue: "גיל הגיע ב־18:15.",
+      type: "equals",
+      items: ["גיל", "18:15"]
+    },
+    {
+      name: "mi-she-arrived-maqaf-time-positive",
+      puzzle: {
+        categories: {
+          people: ["שירה", "ליאור"],
+          time: ["19:00", "19:20"],
+          snack: ["פופקורן", "גלידה"]
+        }
+      },
+      clue: "מי שהגיע ב־19:20 קנה פופקורן.",
+      type: "equals",
+      items: ["19:20", "פופקורן"]
+    },
+    {
+      name: "negative-first-arrival-ordinal",
+      puzzle: {
+        categories: {
+          people: ["שירה", "ליאור"],
+          time: ["19:00", "19:20"],
+          snack: ["פופקורן", "גלידה"]
+        }
+      },
+      clue: "שירה לא הגיעה ראשונה.",
+      type: "notEquals",
+      items: ["שירה", "19:00"]
+    },
+    {
+      name: "negative-last-arrival-ordinal",
+      puzzle: {
+        categories: {
+          people: ["הילה", "רן"],
+          time: ["16:00", "16:40"],
+          book: ["פנטזיה", "מתח"]
+        }
+      },
+      clue: "הילה לא הגיעה אחרונה.",
+      type: "notEquals",
+      items: ["הילה", "16:40"]
+    },
+    {
+      name: "she-lo-negative",
+      puzzle: {
+        categories: {
+          people: ["אורי", "שירה"],
+          snack: ["פופקורן", "נאצ'וס"],
+          time: ["19:00", "19:20"]
+        }
+      },
+      clue: "אורי קנה את הנשנוש שלא מגיע בקופסת פופקורן.",
+      type: "notEquals",
+      items: ["אורי", "פופקורן"]
+    },
+    {
       name: "activity-hall-positive",
       puzzle: {
         categories: {
@@ -1513,6 +1658,22 @@ function runGeneralParserSelfChecks() {
       sample.constraints
     );
   });
+
+  const semanticPuzzle = {
+    categories: {
+      people: ["דנה", "רועי"],
+      time: ["08:00", "08:10"],
+      pastry: ["בורקס", "עוגייה"]
+    }
+  };
+  const semanticResult = parseClue(
+    "דנה קנתה את המאפה המלוח היחיד ברשימה.",
+    buildCategoryIndex(semanticPuzzle)
+  );
+
+  if (!semanticResult.unsupportedReason) {
+    throw new Error("semantic clue: expected unsupported result for world-knowledge wording");
+  }
 }
 
 function printSolution(solution) {

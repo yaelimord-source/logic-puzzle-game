@@ -509,5 +509,47 @@
     "difficulty": "בינוני",
     "levelNumber": 35,
     "title": "כנס המדענים"
+  },
+  {
+    "file": "74.json",
+    "id": "74",
+    "difficulty": "קל",
+    "levelNumber": 19,
+    "title": "התור למאפייה"
+  },
+  {
+    "file": "75.json",
+    "id": "75",
+    "difficulty": "קל",
+    "levelNumber": 20,
+    "title": "שיעור היוגה"
+  },
+  {
+    "file": "76.json",
+    "id": "76",
+    "difficulty": "קל",
+    "levelNumber": 21,
+    "title": "ההופעה בפארק"
+  },
+  {
+    "file": "77.json",
+    "id": "77",
+    "difficulty": "קל",
+    "levelNumber": 22,
+    "title": "חנות הצמחים"
+  },
+  {
+    "file": "78.json",
+    "id": "78",
+    "difficulty": "קל",
+    "levelNumber": 23,
+    "title": "הספרייה העירונית"
+  },
+  {
+    "file": "79.json",
+    "id": "79",
+    "difficulty": "קל",
+    "levelNumber": 24,
+    "title": "תחנת הרכבת"
   }
 ]
